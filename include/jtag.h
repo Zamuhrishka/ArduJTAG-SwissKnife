@@ -81,22 +81,22 @@ class JtagBus
 };
 
 
+class Jtag
+{
+    public:
+        Jtag() = default;
+        Jtag(JtagBus bus);
+        Jtag(int tms, );
 
-//         int jtag_pin_write(int pin, int value);
-//         int jtag_pin_set(int pin);
-//         int jtag_pin_clear(int pin);
-//         int jtag_pin_get(int pin);
-//         int jtag_pulse_high(int pin, unsigned int us);
-//         int jtag_pulse_low(int pin, unsigned int us);
-//         int jtag_assign_pin(int jtag_pin, int digital_pin);
+        void ir(uint32_t length, byte* command, byte* output);
+        void dr(uint32_t length, byte* data, byte* output);
+        void reset();
 
+        void add_bus(JtagBus bus);
 
-//         int jtag_set_speed(unsigned int khz);
-//         int jtag_clock(int tms, int tdi);
-//         int jtag_sequence(unsigned int n, const byte *tms, const byte *tdi, byte *tdo);
-//         void jtag_reset(void);
-//         void jtag_ir(uint32_t length, byte* command, byte* output);
-//         void jtag_dr(uint32_t length, byte* data, byte* output);
+    private:
+        JtagBus bus;
+};
 
 
 //     private:

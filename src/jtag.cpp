@@ -154,32 +154,68 @@ int JtagBus::get_array_bit(int i_bit, const byte *data) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+Jtag::Jtag(JtagBus bus) {
+    this->bus = bus;
 }
 
-int JtagPin::get() {
-    // if (jtag_pin_dir[pin] != INPUT) {
-    //     return JTAG_ERROR_BAD_PIN;
-    // }
+void Jtag::reset() {
+    byte tms = 0x1F;
+    byte tdi = 0x00;
+    byte tdo = 0x00;
 
-    return (digitalRead(this->digital_pin) == HIGH) ? 1 : 0;
+    this->bus.sequence(5, &tms, &tdi, &tdo);
 }
 
-int JtagPin::pulse_high(unsigned int us) {
-    this->set();
-    delayMicroseconds(us);
-    this->clear();
+void Jtag::ir(uint32_t length, byte* command, byte* output) {
+    byte tms_pre = 0x06;
+    byte tms_post = 0x01;
+    byte tdi_pre = 0x00;
+    byte tdi_post = 0x00;
+    int i_seq = 0;
+
+    this->reset();
+
+    this->bus.sequence(5, &tms_pre, &tdi_pre, output);
+
+    for (i_seq = 0; i_seq < length-1; i_seq++) {
+        this->bus.set_array_bit(i_seq, output, this->bus.clock(0, this->bus.get_array_bit(i_seq, command)));
+    }
+
+    this->bus.set_array_bit(i_seq, output, this->bus.clock(1, this->bus.get_array_bit(i_seq, command)));
+    this->bus.sequence(2, &tms_post, &tdi_post, output);
 }
 
-int JtagPin::pulse_low(unsigned int us) {
-    this->set();
-    delayMicroseconds(us);
-    this->clear();
+void Jtag::dr(uint32_t length, byte* data, byte* output) {
+    byte tms_pre = 0x02;
+    byte tms_post = 0x01;
+    byte tdi_pre = 0x00;
+    byte tdi_post = 0x00;
+    int i_seq = 0;
+
+    this->reset();
+
+    this->bus.sequence(4, &tms_pre, &tdi_pre, output);
+
+    for (i_seq = 0; i_seq < length-1; i_seq++) {
+        this->bus.set_array_bit(i_seq, output, this->bus.clock(0, this->bus.get_array_bit(i_seq, data)));
+    }
+
+    this->bus.set_array_bit(i_seq, output, this->bus.clock(1, this->bus.get_array_bit(i_seq, data)));
+    this->bus.sequence(2, &tms_post, &tdi_post, output);
 }
 
-int JtagPin::assign(int jtag_pin, int digital_pin) {
 
-}
-
-int JtagPin::set_speed(unsigned int khz) {
-
+void Jtag::add_bus(JtagBus bus) {
+    this->bus = bus;
 }
