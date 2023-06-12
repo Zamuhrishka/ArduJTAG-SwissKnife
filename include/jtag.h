@@ -5,8 +5,7 @@
  * @date 2023-05-31
  */
 
-#ifndef jtag.h
-#define jtag.h
+#pragma once
 
 //_____ I N C L U D E S _______________________________________________________
 #include <Arduino.h>
@@ -99,9 +98,5 @@ class Jtag
 };
 
 
-//     private:
-//         void set_bit_in_array(int i_bit, byte *data, int value);
-//         int get_bit_from_array(int i_bit, const byte *data);
-// };
 
-#endif
+// #endif
