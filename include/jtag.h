@@ -33,6 +33,31 @@ class JtagWire
 };
 
 
+enum class JTAGPin {
+  TCK = 0,
+  TMS = 1,
+  TDI = 2,
+  TDO = 3,
+  TRST = 4,
+};
+
+namespace engine {
+    #define N_JTAG_PINS 5
+
+    enum jtag_constants {
+        JTAG_MAX_SPEED_KHZ = 500,
+        JTAG_MAX_SEQUENCE_LEN = 256,
+        JTAG_MAX_SEQUENCE_LEN_BYTES = JTAG_MAX_SEQUENCE_LEN / 8, // 32
+    };
+
+    enum jtag_errors {
+        JTAG_NO_ERROR = 0,
+        JTAG_ERROR_BAD_PIN = -1,
+        JTAG_ERROR_BAD_SPEED = -2,
+        JTAG_ERROR_BAD_SEQUENCE_LEN = -3,
+    };
+}
+
 
 
 // class Jtag
