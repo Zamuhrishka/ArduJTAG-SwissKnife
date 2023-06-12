@@ -59,11 +59,28 @@ namespace engine {
 }
 
 
+class JtagBus
+{
+    public:
+        JtagBus();
 
-// class Jtag
-// {
-//     public:
-//         Jtag(byte color = 5, byte bright = 30);
+        void assign_pin(JTAGPin jtag_pin, JtagWire jtag_wire);
+        int set_speed(unsigned int khz);
+        void reset();
+        int clock(int tms, int tdi);
+        int sequence(unsigned int n, const byte *tms, const byte *tdi, byte *tdo);
+
+        void set_array_bit(int i_bit, byte *data, int value);
+        int get_array_bit(int i_bit, const byte *data);
+
+    private:
+
+        unsigned long last_tck_micros;
+        unsigned long min_tck_micros;
+        JtagWire bus[N_JTAG_PINS];
+};
+
+
 
 //         int jtag_pin_write(int pin, int value);
 //         int jtag_pin_set(int pin);
