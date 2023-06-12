@@ -1,16 +1,52 @@
 #include "jtag.h"
 
+#include <assert.h>
 
-JtagPin::JtagPin(int digital_pin, int dir) {
-    // if (pin >= N_JTAG_PINS || pin < 0) {
-    //     return JTAG_ERROR_BAD_PIN;
-    // }
+JtagWire::JtagWire(int digital_pin, int dir) {
+    this->assign(digital_pin, dir);
+}
 
+void JtagWire::write(int value) {
+    assert(value == LOW || value == HIGH);
+    assert(this->dir == OUTPUT);
+
+    digitalWrite(this->digital_pin, value);
+}
+
+void JtagWire::set() {
+    this->write(HIGH);
+}
+
+void JtagWire::clear() {
+    this->write(LOW);
+}
+
+int JtagWire::get() {
+    assert(this->dir == INPUT);
+    return digitalRead(this->digital_pin);
+}
+
+int JtagWire::pulse_high(unsigned int us) {
+    this->set();
+    delayMicroseconds(us);
+    this->clear();
+}
+
+int JtagWire::pulse_low(unsigned int us) {
+    this->set();
+    delayMicroseconds(us);
+    this->clear();
+}
+
+int JtagWire::assign(int digital_pin, int dir) {
     this->digital_pin = digital_pin;
     this->dir = dir;
 
     digitalWrite(this->digital_pin, LOW);
     pinMode(this->digital_pin, this->dir);
+}
+
+
 
     // jtag_last_tck_micros = micros();
     // jtag_min_tck_micros = 1;

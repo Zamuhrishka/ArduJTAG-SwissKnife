@@ -13,19 +13,20 @@
 //_____ C O N F I G S  ________________________________________________________
 
 //_____ D E F I N I T I O N S _________________________________________________
-class JtagPin
+
+class JtagWire
 {
     public:
-        JtagPin(int digital_pin, int dir);
+        JtagWire() = default;
+        JtagWire(int digital_pin, int dir);
 
-        int write(int value);
-        int set();
-        int clear();
+        void set();
+        void clear();
         int get();
         int pulse_high(unsigned int us);
         int pulse_low(unsigned int us);
-        int assign(int jtag_pin, int digital_pin);
-        int set_speed(unsigned int khz);
+        int assign(int digital_pin, int dir);
+        void write(int value);
     private:
         int digital_pin;
         int dir;
