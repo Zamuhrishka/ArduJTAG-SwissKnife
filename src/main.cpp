@@ -13,11 +13,11 @@ Jtag arm_jtag = Jtag();
 void setup() {
   // put your setup code here, to run once:
   // pinMode(LED_BUILTIN, OUTPUT);
-  jtag_bus.assign_pin(JTAGPin::TCK, tck);
-  jtag_bus.assign_pin(JTAGPin::TMS, tms);
-  jtag_bus.assign_pin(JTAGPin::TDI, tdi);
-  jtag_bus.assign_pin(JTAGPin::TDO, tdo);
-  jtag_bus.assign_pin(JTAGPin::TRST, trst);
+  jtag_bus.assign_pin(JTAG::PIN::TCK, tck);
+  jtag_bus.assign_pin(JTAG::PIN::TMS, tms);
+  jtag_bus.assign_pin(JTAG::PIN::TDI, tdi);
+  jtag_bus.assign_pin(JTAG::PIN::TDO, tdo);
+  jtag_bus.assign_pin(JTAG::PIN::TRST, trst);
 
   arm_jtag.add_bus(jtag_bus);
 

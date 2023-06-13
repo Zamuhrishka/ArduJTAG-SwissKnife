@@ -2,15 +2,25 @@
 
 #include <assert.h>
 
-JtagWire::JtagWire(int digital_pin, int dir) {
-    this->assign(digital_pin, dir);
+namespace JTAG_PRIV
+{
+    const uint8_t RESET_TMS = 0x1F;
+    const uint8_t RESET_TMS_LEN = 5;
+
+    const uint8_t IR_TMS_PRE = 6;
+    const uint8_t IR_TMS_POST = 1;
+    const uint8_t IR_TMS_PRE_LEN = 5;
+    const uint8_t IR_TMS_POST_LEN = 2;
+
+    const uint8_t DR_TMS_PRE = 2;
+    const uint8_t DR_TMS_POST = 1;
+    const uint8_t DR_TMS_PRE_LEN = 4;
+    const uint8_t DR_TMS_POST_LEN = 2;
 }
 
-void JtagWire::write(int value) {
-    assert(value == LOW || value == HIGH);
-    assert(this->dir == OUTPUT);
-
-    digitalWrite(this->digital_pin, value);
+JtagWire::JtagWire(int digital_pin, int dir) : JtagWire() {
+    assert(dir == INPUT || dir == OUTPUT);
+    this->assign(digital_pin, dir);
 }
 
 void JtagWire::set() {
@@ -21,24 +31,33 @@ void JtagWire::clear() {
     this->write(LOW);
 }
 
-int JtagWire::get() {
+int JtagWire::get() const {
     assert(this->dir == INPUT);
     return digitalRead(this->digital_pin);
 }
 
-int JtagWire::pulse_high(unsigned int us) {
+void JtagWire::pulse_high(size_t us) {
     this->set();
     delayMicroseconds(us);
     this->clear();
 }
 
-int JtagWire::pulse_low(unsigned int us) {
+void JtagWire::pulse_low(size_t us) {
     this->set();
     delayMicroseconds(us);
     this->clear();
 }
 
-int JtagWire::assign(int digital_pin, int dir) {
+void JtagWire::write(int value) {
+    assert(value == LOW || value == HIGH);
+    assert(this->dir == OUTPUT);
+
+    digitalWrite(this->digital_pin, value);
+}
+
+void JtagWire::assign(int digital_pin, int dir) {
+    assert(dir == INPUT || dir == OUTPUT);
+
     this->digital_pin = digital_pin;
     this->dir = dir;
 
@@ -46,7 +65,14 @@ int JtagWire::assign(int digital_pin, int dir) {
     pinMode(this->digital_pin, this->dir);
 }
 
+void JtagWire::set_direction(int dir) {
+    assert(dir == INPUT || dir == OUTPUT);
+    this->dir = dir;
+}
 
+int JtagWire::get_direction() const {
+    return this->dir;
+}
 
 
 
@@ -54,78 +80,104 @@ int JtagWire::assign(int digital_pin, int dir) {
 
 
 JtagBus::JtagBus() {
+    this->bus[static_cast<uint8_t>(JTAG::PIN::TCK)].set_direction(OUTPUT);
+    this->bus[static_cast<uint8_t>(JTAG::PIN::TDI)].set_direction(OUTPUT);
+    this->bus[static_cast<uint8_t>(JTAG::PIN::TMS)].set_direction(OUTPUT);
+    this->bus[static_cast<uint8_t>(JTAG::PIN::TRST)].set_direction(OUTPUT);
+    this->bus[static_cast<uint8_t>(JTAG::PIN::TDO)].set_direction(INPUT);
     this->last_tck_micros = micros();
     this->min_tck_micros = 1;
 }
 
-void JtagBus::assign_pin(JTAGPin jtag_pin, JtagWire jtag_wire) {
+JtagBus::JtagBus(JtagWire bus[], size_t size) : JtagBus() {
+    assert(bus != nullptr);
+    assert(size == JTAG::PINS_NUMBER);
+
+    for (size_t i = 0; i < size; i++)
+    {
+        this->bus[i] = bus[i];
+    }
+}
+
+void JtagBus::assign_pin(JTAG::PIN jtag_pin, JtagWire jtag_wire) {
     uint8_t index = static_cast<uint8_t>(jtag_pin);
     this->bus[index] = jtag_wire;
 }
 
-int JtagBus::set_speed(unsigned int khz) {
-    if (khz == 0 || khz > engine::JTAG_MAX_SPEED_KHZ) {
-        return engine::JTAG_ERROR_BAD_SPEED;
+void JtagBus::assign_pin(JTAG::PIN jtag_pin, int digital_pin) {
+    uint8_t index = static_cast<uint8_t>(jtag_pin);
+    this->bus[index].assign(digital_pin, this->bus[index].get_direction());
+}
+
+JTAG::ERROR JtagBus::set_speed(size_t khz) {
+    if (khz == 0 || khz > static_cast<uint8_t>(JTAG::CONSTANTS::MAX_SPEED_KHZ)) {
+        return JTAG::ERROR::INVALID_SPEED;
     }
 
-    // Mininum time for TCK to be stable is half the clock period.
-    // For 100kHz of TCK frequency the period is 10us so jtag_min_tck_micros is
-    // 5us.
+    /*
+     * Mininum time for TCK to be stable is half the clock period.
+     * For 100kHz of TCK frequency the period is 10us so jtag_min_tck_micros is
+     * 5us.
+     */
     this->min_tck_micros = (500U + khz - 1) / khz; // ceil
 
-    return engine::JTAG_NO_ERROR;
+    return JTAG::ERROR::NO;
+}
+
+size_t JtagBus::get_speed() const {
+    return this->min_tck_micros;
 }
 
 void JtagBus::reset() {
-    this->bus[static_cast<uint8_t>(JTAGPin::TRST)].clear();
+    this->bus[static_cast<uint8_t>(JTAG::PIN::TRST)].clear();
     delayMicroseconds(this->min_tck_micros);
-    this->bus[static_cast<uint8_t>(JTAGPin::TRST)].set();
+    this->bus[static_cast<uint8_t>(JTAG::PIN::TRST)].set();
 }
 
-
-int JtagBus::clock(int tms, int tdi) {
-    unsigned long cur_micros;
-    int tdo;
+uint8_t JtagBus::clock(uint8_t tms, uint8_t tdi) {
+    assert(tms == HIGH || tms == LOW);
+    assert(tdi == HIGH || tdi == LOW);
 
     // Setting TDI and TMS before rising edge of TCK.
-    this->bus[static_cast<uint8_t>(JTAGPin::TDI)].write(tdi);
-    this->bus[static_cast<uint8_t>(JTAGPin::TMS)].write(tms);
+    this->bus[static_cast<uint8_t>(JTAG::PIN::TDI)].write(tdi);
+    this->bus[static_cast<uint8_t>(JTAG::PIN::TMS)].write(tms);
 
     // Waiting until TCK has been stable for at least jtag_min_tck_micros.
-    cur_micros = micros();
+    size_t cur_micros = micros();
 
     if (cur_micros < this->last_tck_micros + this->min_tck_micros) {
         delayMicroseconds(this->last_tck_micros + this->min_tck_micros - cur_micros);
     }
 
-    //   tdo = jtag_get_pin(TDO); // TDO changes on falling edge of TCK, we are reading
-    //                            // value changed during last jtag_clock.
-
-    this->bus[static_cast<uint8_t>(JTAGPin::TCK)].set();
+    this->bus[static_cast<uint8_t>(JTAG::PIN::TCK)].set();
     delayMicroseconds(this->min_tck_micros);
-    this->bus[static_cast<uint8_t>(JTAGPin::TCK)].clear();
+    this->bus[static_cast<uint8_t>(JTAG::PIN::TCK)].clear();
 
+    // Saving timestamp of last TCK change
+    this->last_tck_micros = micros();
 
-    this->last_tck_micros = micros(); // Saving timestamp of last TCK change.
-
-    tdo = this->bus[static_cast<uint8_t>(JTAGPin::TDO)].get(); // TDO changes on falling edge of TCK, we are reading
-                            // value changed during last jtag_clock.
+    // TDO changes on falling edge of TCK, we are reading
+    // value changed during last jtag_clock.
+    uint8_t tdo = this->bus[static_cast<uint8_t>(JTAG::PIN::TDO)].get();
 
     return tdo;
 }
 
-int JtagBus::sequence(unsigned int n, const byte *tms, const byte *tdi, byte *tdo) {
-    unsigned int i_seq;
+JTAG::ERROR JtagBus::sequence(size_t n, const byte tms[], const byte tdi[], byte tdo[]) {
+    assert(tms != nullptr);
+    assert(tdi != nullptr);
+    assert(tdo != nullptr);
+    assert(n != 0);
 
-    if (n > engine::JTAG_MAX_SEQUENCE_LEN) {
-        return engine::JTAG_ERROR_BAD_SEQUENCE_LEN;
+    if (n > static_cast<uint8_t>(JTAG::CONSTANTS::MAX_SEQUENCE_LEN)) {
+        return JTAG::ERROR::INVALID_SEQUENCE_LEN;
     }
 
-    for (i_seq = 0; i_seq < n; i_seq++) {
-        this->set_array_bit(i_seq, tdo, this->clock(this->get_array_bit(i_seq, tms), this->get_array_bit(i_seq, tdi)));
+    for (size_t i = 0; i < n; i++) {
+        this->set_array_bit(i, tdo, this->clock(this->get_array_bit(i, tms), this->get_array_bit(i, tdi)));
     }
 
-    return engine::JTAG_NO_ERROR;
+    return JTAG::ERROR::NO;
 }
 
 void JtagBus::set_array_bit(int i_bit, byte *data, int value) {
@@ -159,62 +211,71 @@ int JtagBus::get_array_bit(int i_bit, const byte *data) {
 
 
 
+Jtag::Jtag(JtagBus bus) : Jtag() {
+    this->add_bus(bus);
+}
 
-
-
-
-
-
-Jtag::Jtag(JtagBus bus) {
-    this->bus = bus;
+Jtag::Jtag(uint8_t tms, uint8_t tdi, uint8_t tdo, uint8_t tck, uint8_t trst) : Jtag() {
+    this->bus.assign_pin(JTAG::PIN::TMS, tms);
+    this->bus.assign_pin(JTAG::PIN::TDI, tdi);
+    this->bus.assign_pin(JTAG::PIN::TDO, tdo);
+    this->bus.assign_pin(JTAG::PIN::TCK, tck);
+    this->bus.assign_pin(JTAG::PIN::TRST, trst);
 }
 
 void Jtag::reset() {
-    byte tms = 0x1F;
+    byte tms = JTAG_PRIV::RESET_TMS;
     byte tdi = 0x00;
     byte tdo = 0x00;
 
-    this->bus.sequence(5, &tms, &tdi, &tdo);
+    this->bus.sequence(JTAG_PRIV::RESET_TMS_LEN, &tms, &tdi, &tdo);
 }
 
 void Jtag::ir(uint32_t length, byte* command, byte* output) {
-    byte tms_pre = 0x06;
-    byte tms_post = 0x01;
+    assert(command != nullptr);
+    assert(output != nullptr);
+    assert(length != 0);
+
+    byte tms_pre = JTAG_PRIV::IR_TMS_PRE;
+    byte tms_post = JTAG_PRIV::IR_TMS_POST;;
     byte tdi_pre = 0x00;
     byte tdi_post = 0x00;
-    int i_seq = 0;
+    size_t i_seq = 0;
 
     this->reset();
 
-    this->bus.sequence(5, &tms_pre, &tdi_pre, output);
+    this->bus.sequence(JTAG_PRIV::IR_TMS_PRE_LEN, &tms_pre, &tdi_pre, output);
 
     for (i_seq = 0; i_seq < length-1; i_seq++) {
         this->bus.set_array_bit(i_seq, output, this->bus.clock(0, this->bus.get_array_bit(i_seq, command)));
     }
 
     this->bus.set_array_bit(i_seq, output, this->bus.clock(1, this->bus.get_array_bit(i_seq, command)));
-    this->bus.sequence(2, &tms_post, &tdi_post, output);
+    this->bus.sequence(JTAG_PRIV::IR_TMS_POST_LEN, &tms_post, &tdi_post, output);
 }
 
 void Jtag::dr(uint32_t length, byte* data, byte* output) {
-    byte tms_pre = 0x02;
-    byte tms_post = 0x01;
+    assert(data != nullptr);
+    assert(output != nullptr);
+    assert(length != 0);
+
+    byte tms_pre = JTAG_PRIV::DR_TMS_PRE;
+    byte tms_post = JTAG_PRIV::DR_TMS_POST;
     byte tdi_pre = 0x00;
     byte tdi_post = 0x00;
-    int i_seq = 0;
+    size_t i_seq = 0;
 
     this->reset();
 
-    this->bus.sequence(4, &tms_pre, &tdi_pre, output);
+    this->bus.sequence(JTAG_PRIV::DR_TMS_PRE_LEN, &tms_pre, &tdi_pre, output);
 
     for (i_seq = 0; i_seq < length-1; i_seq++) {
         this->bus.set_array_bit(i_seq, output, this->bus.clock(0, this->bus.get_array_bit(i_seq, data)));
     }
 
     this->bus.set_array_bit(i_seq, output, this->bus.clock(1, this->bus.get_array_bit(i_seq, data)));
-    this->bus.sequence(2, &tms_post, &tdi_post, output);
+    this->bus.sequence(JTAG_PRIV::DR_TMS_POST_LEN, &tms_post, &tdi_post, output);
 }
-
 
 void Jtag::add_bus(JtagBus bus) {
     this->bus = bus;
