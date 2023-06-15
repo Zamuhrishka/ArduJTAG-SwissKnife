@@ -11,6 +11,8 @@ JtagBus jtag_bus = JtagBus();
 Jtag arm_jtag = Jtag();
 
 void setup() {
+   Serial.begin(9600);
+
   // put your setup code here, to run once:
   // pinMode(LED_BUILTIN, OUTPUT);
   jtag_bus.assign_pin(JTAG::PIN::TCK, tck);
@@ -18,6 +20,7 @@ void setup() {
   jtag_bus.assign_pin(JTAG::PIN::TDI, tdi);
   jtag_bus.assign_pin(JTAG::PIN::TDO, tdo);
   jtag_bus.assign_pin(JTAG::PIN::TRST, trst);
+  jtag_bus.set_speed(800000);
 
   arm_jtag.add_bus(jtag_bus);
 
@@ -35,8 +38,19 @@ void loop() {
   // tdi.clear();
   // tdi.pulse_high(1000000UL);
 
-  jtag_bus.clock(1, 1);
-  delay(1000);
-  jtag_bus.clock(0, 0);
-  delay(1000);
+  // jtag_bus.clock(1, 1);
+  // delay(1000);
+  // jtag_bus.clock(0, 0);
+  // delay(1000);
+
+  uint8_t id[4] = {0,0,0,0};
+  uint8_t data[4] = {0,0,0,0};
+
+  arm_jtag.dr(32, data, id);
+
+  for (uint8_t i_seq = 0; i_seq < 4; i_seq++) {
+    Serial.print(id[i_seq], HEX);
+  }
+
+  Serial.println("");
 }
