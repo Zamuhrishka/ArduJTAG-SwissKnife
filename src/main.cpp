@@ -51,11 +51,15 @@ void loop() {
   arm_jtag.reset();
   arm_jtag.ir(9, command, output);
   Serial.println("\n-------------------------------------------------");
-  arm_jtag.dr(33, data, output);
+  arm_jtag.dr(32, data, output);
 
   Serial.println("================================================");
 
+  // int size_1 = sizeof(size_t);
+  // int size_2 = sizeof(unsigned long);
 
+  // Serial.println(size_1);
+  // Serial.println(size_2);
 
   // uint8_t id[4] = {0,0,0,0};
   // uint8_t data[4] = {0,0,0,0};
