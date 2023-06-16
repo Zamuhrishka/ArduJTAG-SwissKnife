@@ -76,8 +76,8 @@ class JtagBus
         void assign_pin(JTAG::PIN jtag_pin, JtagWire jtag_wire);
         void assign_pin(JTAG::PIN jtag_pin, int digital_pin);
 
-        JTAG::ERROR set_speed(size_t khz);
-        size_t get_speed() const;
+        JTAG::ERROR set_speed(uint32_t khz);
+        uint32_t get_speed() const;
 
         void reset();
         uint8_t clock(uint8_t tms, uint8_t tdi);
@@ -87,8 +87,8 @@ class JtagBus
         int get_array_bit(int i_bit, const byte *data);
 
     private:
-        size_t last_tck_micros = 0;
-        size_t min_tck_micros = 1;
+        unsigned long last_tck_micros = 0;
+        unsigned long min_tck_micros = 1;
         JtagWire bus[JTAG::PINS_NUMBER];
 };
 

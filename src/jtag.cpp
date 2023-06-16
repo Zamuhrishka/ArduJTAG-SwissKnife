@@ -109,8 +109,8 @@ void JtagBus::assign_pin(JTAG::PIN jtag_pin, int digital_pin) {
     this->bus[index].assign(digital_pin, this->bus[index].get_direction());
 }
 
-JTAG::ERROR JtagBus::set_speed(size_t khz) {
-    if (khz == 0 || khz > static_cast<uint8_t>(JTAG::CONSTANTS::MAX_SPEED_KHZ)) {
+JTAG::ERROR JtagBus::set_speed(uint32_t khz) {
+    if (khz == 0 || khz > static_cast<uint32_t>(JTAG::CONSTANTS::MAX_SPEED_KHZ)) {
         return JTAG::ERROR::INVALID_SPEED;
     }
 
@@ -124,7 +124,7 @@ JTAG::ERROR JtagBus::set_speed(size_t khz) {
     return JTAG::ERROR::NO;
 }
 
-size_t JtagBus::get_speed() const {
+uint32_t JtagBus::get_speed() const {
     return this->min_tck_micros;
 }
 
