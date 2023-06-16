@@ -43,14 +43,29 @@ void loop() {
   // jtag_bus.clock(0, 0);
   // delay(1000);
 
-  uint8_t id[4] = {0,0,0,0};
-  uint8_t data[4] = {0,0,0,0};
+  byte data[33] = {0};
+  byte output[33] = {0};
+  byte command[] = {0xFE, 0x01};
 
-  arm_jtag.dr(32, data, id);
 
-  for (uint8_t i_seq = 0; i_seq < 4; i_seq++) {
-    Serial.print(id[i_seq], HEX);
-  }
+  arm_jtag.reset();
+  arm_jtag.ir(9, command, output);
+  Serial.println("\n-------------------------------------------------");
+  arm_jtag.dr(33, data, output);
+
+  Serial.println("================================================");
+
+
+
+  // uint8_t id[4] = {0,0,0,0};
+  // uint8_t data[4] = {0,0,0,0};
+
+  // arm_jtag.dr(32, data, id);
+
+  // for (uint8_t i_seq = 0; i_seq < 4; i_seq++) {
+  //   Serial.print(data[i_seq], HEX);
+  // }
 
   Serial.println("");
+  delay(1000);
 }
