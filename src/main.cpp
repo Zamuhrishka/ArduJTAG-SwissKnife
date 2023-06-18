@@ -33,43 +33,70 @@ void loop() {
   // digitalWrite(LED_BUILTIN, LOW);   // turn the LED off by making the voltage LOW
   // delay(1000);
 
-  // tdi.set();
-  // delay(1000);
-  // tdi.clear();
-  // tdi.pulse_high(1000000UL);
-
-  // jtag_bus.clock(1, 1);
-  // delay(1000);
-  // jtag_bus.clock(0, 0);
-  // delay(1000);
-
   byte data[33] = {0};
   byte output[33] = {0};
+  byte id[10] = {0,0,0,0,0,0,0,0,0,0};
+  byte* ptr = &output[0];
   byte command[] = {0xFE, 0x01};
 
 
-  arm_jtag.reset();
-  arm_jtag.ir(9, command, output);
+
+
   Serial.println("\n-------------------------------------------------");
-  arm_jtag.dr(32, data, output);
+  arm_jtag.reset();
 
-  Serial.println("================================================");
+  Serial.println("IR: ");
+  arm_jtag.ir(9, command, &output[0]);
 
-  // int size_1 = sizeof(size_t);
-  // int size_2 = sizeof(unsigned long);
+  Serial.print("TMS: 01100");
+  for (size_t i = 0; i < 8; i++)
+  {
+  Serial.print("0");
+  }
+  Serial.println("110");
 
-  // Serial.println(size_1);
-  // Serial.println(size_2);
+  Serial.print("TDI: 00000");
+  for (size_t i = 0; i < 8; i++)
+  {
+    Serial.print(jtag_bus.get_array_bit(i, command));
+  }
+  Serial.print(jtag_bus.get_array_bit(8, &command[8]));
+  Serial.println("00");
 
-  // uint8_t id[4] = {0,0,0,0};
-  // uint8_t data[4] = {0,0,0,0};
-
-  // arm_jtag.dr(32, data, id);
-
-  // for (uint8_t i_seq = 0; i_seq < 4; i_seq++) {
-  //   Serial.print(data[i_seq], HEX);
-  // }
-
+  Serial.print("TDO: ");
+  for (size_t i = 0; i < 16; i++) {
+    Serial.print(jtag_bus.get_array_bit(i, output));
+  }
   Serial.println("");
+
+
+
+  Serial.println("DR: ");
+  arm_jtag.dr(33, data, &id[0]);
+
+  Serial.print("TMS: 100");
+  for (size_t i = 0; i < 32; i++)
+  {
+  Serial.print("0");
+  }
+  Serial.print("1");
+  Serial.println("10");
+
+  Serial.print("TDI: 000");
+  for (size_t i = 0; i < 32; i++)
+  {
+    Serial.print(jtag_bus.get_array_bit(i, data));
+  }
+  Serial.print(jtag_bus.get_array_bit(32, data));
+  Serial.println("00");
+
+  Serial.print("TDO: ");
+  for (size_t i = 0; i < 38; i++) {
+    Serial.print(jtag_bus.get_array_bit(i, id));
+  }
+  Serial.println("");
+
+  Serial.println("\n-------------------------------------------------");
+
   delay(1000);
 }
