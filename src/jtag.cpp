@@ -164,7 +164,7 @@ uint8_t JtagBus::clock(uint8_t tms, uint8_t tdi) {
     // value changed during last jtag_clock.
     uint8_t tdo = this->bus[static_cast<uint8_t>(JTAG::PIN::TDO)].get();
 
-    // Serial.println(tdo);
+// Serial.println(tdo);
 
     return tdo;
 }
