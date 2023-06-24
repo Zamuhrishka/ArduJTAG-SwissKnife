@@ -104,7 +104,9 @@ class Jtag
         Jtag(uint8_t tms, uint8_t tdi, uint8_t tdo, uint8_t tck, uint8_t trst);
 
         void ir(uint32_t length, byte* command, byte* output);
+        void ir(const char *command, byte* output);
         void dr(uint32_t length, byte* data, byte* output);
+        void dr(const char *data, byte* output);
         void reset();
 
         void add_bus(JtagBus bus);
