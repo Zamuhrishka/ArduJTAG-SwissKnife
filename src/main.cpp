@@ -113,18 +113,18 @@ void loop() {
 
 
 
-  Serial.println("===================================== ID =====================================");
-  arm_jtag.reset();
+  // Serial.println("===================================== ID =====================================");
+  // arm_jtag.reset();
 
-  arm_jtag.ir("011111111", &output[0]);
-  arm_jtag.dr("000000000000000000000000000000000", &id[0]);
+  // arm_jtag.ir("011111111", &output[0]);
+  // arm_jtag.dr("000000000000000000000000000000000", &id[0]);
 
-  Serial.print("TDO: ");
-  for (size_t i = 0; i < DR_LEN+8; i++) {
-    Serial.print(jtag_bus.get_array_bit(i, id));
-  }
-  Serial.println("");
-  Serial.println("");
+  // Serial.print("TDO: ");
+  // for (size_t i = 0; i < DR_LEN+8; i++) {
+  //   Serial.print(jtag_bus.get_array_bit(i, id));
+  // }
+  // Serial.println("");
+  // Serial.println("");
 
 
   Serial.println("===================================== CTRL/STAT =====================================");
@@ -133,22 +133,51 @@ void loop() {
   arm_jtag.ir("010111111", &output[0]);
   arm_jtag.dr("010000001000000000000000000000010100", &output[0]);
 
-
+  Serial.println("===================================== WRITE =====================================");
+  arm_jtag.reset();
   arm_jtag.ir("010111111", &output[0]);
-  arm_jtag.dr("010000001000000000000000000000010100", &output[0]);
+  arm_jtag.dr("001000000000000000000000000000000000", &output[0]);
 
+  arm_jtag.reset();
+  arm_jtag.ir("110111111", &output[0]);
+  arm_jtag.dr("000010000000000000000000000000000000", &output[0]);
 
+  arm_jtag.reset();
+  arm_jtag.ir("110111111", &output[0]);
+  arm_jtag.dr("010000000000000000000000000000001000", &output[0]);
 
+  arm_jtag.reset();
+  arm_jtag.ir("110111111", &output[0]);
+  arm_jtag.dr("011101010100101010110101010010101010", &output[0]);
 
+  Serial.println("===================================== READ =====================================");
 
+  arm_jtag.reset();
+  arm_jtag.ir("010111111", &output[0]);
+  arm_jtag.dr("001000000000000000000000000000000000", &output[0]);
 
+  arm_jtag.reset();
+  arm_jtag.ir("110111111", &output[0]);
+  arm_jtag.dr("000010000000000000000000000000000000", &output[0]);
 
+  arm_jtag.reset();
+  arm_jtag.ir("110111111", &output[0]);
+  arm_jtag.dr("010000000000000000000000000000001000", &output[0]);
 
+  arm_jtag.reset();
+  arm_jtag.ir("110111111", &output[0]);
+  arm_jtag.dr("111000000000000000000000000000000000", &output[0]);
 
+  delay(1);
 
+  arm_jtag.dr("000000000000000000000000000000000000", &output[0]);
 
-
-
+  Serial.print("TDO: ");
+  for (size_t i = 0; i < DR_LEN+8; i++) {
+    Serial.print(jtag_bus.get_array_bit(i, output));
+  }
+  Serial.println("");
+  Serial.println("");
 
 
 
