@@ -7,6 +7,7 @@
 SimpleCLI cli;
 Command ir;
 Command dr;
+Command reset;
 Command help;
 Command version;
 
@@ -44,7 +45,7 @@ void irCallback(cmd* c) {
   // Get value
   String code = ir_code.getValue();
 
-  arm_jtag.reset();
+  // arm_jtag.reset();
   arm_jtag.ir(code.c_str(), &output[0]);
 
   // Print response
@@ -82,6 +83,11 @@ void drCallback(cmd* c) {
   memset(output, 0, sizeof(output));
 }
 
+void resetCallback(cmd* c) {
+  arm_jtag.reset();
+  Serial.println("Done!");
+}
+
 // Callback in case of an error
 void errorCallback(cmd_error* e) {
   CommandError cmdError(e); // Create wrapper object
@@ -108,6 +114,7 @@ void setup() {
   dr = cli.addCommand("dr", drCallback);
   dr.addPositionalArgument("data");
 
+  reset = cli.addCommand("reset", resetCallback);
   help = cli.addCommand("help", helpCallback);
   version = cli.addCommand("version", versionCallback);
 
