@@ -24,6 +24,8 @@ const uint8_t IR_FULL_LEN = 16;
 const uint8_t DR_LEN = 33;
 const uint8_t DR_FULL_LEN = 38;
 
+byte output[256] = {};
+
 void helpCallback(cmd* c) {
   Serial.println("This is Help command");
 }
@@ -42,14 +44,18 @@ void irCallback(cmd* c) {
   // Get value
   String code = ir_code.getValue();
 
-  // arm_jtag.reset();
-  // arm_jtag.ir(code.c_str(), &output[0]);
+  arm_jtag.reset();
+  arm_jtag.ir(code.c_str(), &output[0]);
 
   // Print response
-  Serial.print("> ");
-  Serial.print("ir = ");
-  Serial.println(code);
-  // Serial.println(output);
+  Serial.print("> TDO: ");
+  for (size_t i = 0; i < IR_FULL_LEN + 7; i++) {
+    Serial.print(jtag_bus.get_array_bit(i, output));
+  }
+  Serial.println("");
+  Serial.println("");
+
+  memset(output, 0, sizeof(output));
 }
 
 // Callback function for ping command
@@ -63,13 +69,17 @@ void drCallback(cmd* c) {
   String data = dr_data.getValue();
 
   // arm_jtag.reset();
-  // arm_jtag.ir(code.c_str(), &output[0]);
+  arm_jtag.dr(data.c_str(), &output[0]);
 
   // Print response
-  Serial.print("> ");
-  Serial.print("dr = ");
-  Serial.println(data);
-  // Serial.println(output);
+  Serial.print("> TDO: ");
+  for (size_t i = 0; i < DR_FULL_LEN + 7; i++) {
+    Serial.print(jtag_bus.get_array_bit(i, output));
+  }
+  Serial.println("");
+  Serial.println("");
+
+  memset(output, 0, sizeof(output));
 }
 
 // Callback in case of an error
