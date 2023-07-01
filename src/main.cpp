@@ -8,6 +8,7 @@ SimpleCLI cli;
 Command ir;
 Command dr;
 Command reset;
+Command clock;
 Command help;
 Command version;
 
@@ -83,6 +84,25 @@ void drCallback(cmd* c) {
   memset(output, 0, sizeof(output));
 }
 
+void clockCallback(cmd* c) {
+  Command cmd(c); // Create wrapper object
+
+  // Get arguments
+  Argument arg_tms = cmd.getArgument("tms");
+  Argument arg_tdi = cmd.getArgument("tdi");
+
+  // Get value
+  int tms = arg_tms.getValue().toInt();
+  int tdi = arg_tdi.getValue().toInt();
+
+  uint8_t tdo = jtag_bus.clock(tms, tdi);
+
+  // Print response
+  Serial.print("> TDO: ");
+  Serial.println(tdo);
+  Serial.println("");
+}
+
 void resetCallback(cmd* c) {
   arm_jtag.reset();
   Serial.println("Done!");
@@ -113,6 +133,10 @@ void setup() {
 
   dr = cli.addCommand("dr", drCallback);
   dr.addPositionalArgument("data");
+
+  clock = cli.addCommand("clock", clockCallback);
+  clock.addPositionalArgument("tms");
+  clock.addPositionalArgument("tdi");
 
   reset = cli.addCommand("reset", resetCallback);
   help = cli.addCommand("help", helpCallback);
