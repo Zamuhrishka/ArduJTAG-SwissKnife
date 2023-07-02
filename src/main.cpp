@@ -96,11 +96,11 @@ void clockCallback(cmd* c) {
   int tms = arg_tms.getValue().toInt();
   int tdi = arg_tdi.getValue().toInt();
 
-  // uint8_t tdo = jtag_bus.clock(tms, tdi);
+  uint8_t tdo = arm_jtag.clock(tms, tdi);
 
   // Print response
   Serial.print("> TDO: ");
-  // Serial.println(tdo);
+  Serial.println(tdo);
   Serial.println("");
 }
 
