@@ -36,30 +36,32 @@ namespace JTAG
         INVALID_SPEED = -2,
         INVALID_SEQUENCE_LEN = -3,
     };
+
+    void setBitArray(int i_bit, byte *data, int value);
+    int getBitArray(int i_bit, const byte *data);
 }
 //_____ C L A S S E S __________________________________________________________
 /**
  * \brief
  *
  */
-class JtagWire
+class JtagPin
 {
     public:
-        JtagWire() = default;
-        JtagWire(int digital_pin, int dir);
+        JtagPin() = delete;
+        explicit JtagPin(int pin, int dir);
 
-        void set();
-        void clear();
+        void setHigh();
+        void setLow();
         int get() const;
-        void pulse_high(size_t us);
-        void pulse_low(size_t us);
-        void write(int value);
-        void assign(int digital_pin, int dir);
-        void set_direction(int dir);
-        int get_direction() const;
-
+        void pulseHigh(size_t us);
+        void pulseLow(size_t us);
+        void setValue(int value);
+        void assign(int pin, int dir);
+        void setDir(int dir);
+        int getDir() const;
     private:
-        uint32_t digital_pin = 0;
+        uint32_t pin = 0;
         uint8_t dir = INPUT;
 };
 
@@ -70,26 +72,22 @@ class JtagWire
 class JtagBus
 {
     public:
-        JtagBus();
-        JtagBus(JtagWire bus[], size_t size);
+        JtagBus() = delete;
+        explicit JtagBus(JtagPin tms, JtagPin tdi, JtagPin tdo, JtagPin tck, JtagPin rst);
 
-        void assign_pin(JTAG::PIN jtag_pin, JtagWire jtag_wire);
-        void assign_pin(JTAG::PIN jtag_pin, int digital_pin);
-
-        JTAG::ERROR set_speed(uint32_t khz);
-        uint32_t get_speed() const;
-
+        JTAG::ERROR setSpeed(uint32_t khz);
+        uint32_t getSpeed() const;
         void reset();
         uint8_t clock(uint8_t tms, uint8_t tdi);
-        JTAG::ERROR sequence(size_t n, const byte tms[], const byte tdi[], byte tdo[]);
-
-        void set_array_bit(int i_bit, byte *data, int value);
-        int get_array_bit(int i_bit, const byte *data);
-
+        JTAG::ERROR sequence(size_t n, const byte tms[], const byte tdi[], byte *tdo);
     private:
-        unsigned long last_tck_micros = 0;
-        unsigned long min_tck_micros = 1;
-        JtagWire bus[JTAG::PINS_NUMBER];
+        uint32_t last_tck_micros = 0;
+        uint32_t min_tck_micros = 1;
+        JtagPin _tms;
+        JtagPin _tdi;
+        JtagPin _tdo;
+        JtagPin _tck;
+        JtagPin _rst;
 };
 
 /**
@@ -99,18 +97,15 @@ class JtagBus
 class Jtag
 {
     public:
-        Jtag() = default;
-        Jtag(JtagBus bus);
-        Jtag(uint8_t tms, uint8_t tdi, uint8_t tdo, uint8_t tck, uint8_t trst);
+        Jtag() = delete;
+        explicit Jtag(uint8_t tms, uint8_t tdi, uint8_t tdo, uint8_t tck, uint8_t trst);
 
         void ir(uint32_t length, byte* command, byte* output);
         void ir(const char *command, byte* output);
         void dr(uint32_t length, byte* data, byte* output);
         void dr(const char *data, byte* output);
         void reset();
-
-        void add_bus(JtagBus bus);
-
+        JTAG::ERROR setSpeed(uint32_t khz);
     private:
         JtagBus bus;
 };
