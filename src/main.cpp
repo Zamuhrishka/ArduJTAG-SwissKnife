@@ -3,6 +3,14 @@
 
 #include "jtag.h"
 
+
+#define TCK 2
+#define TMS 3
+#define TDI 4
+#define TDO 5
+#define RST 6
+
+
 // Create CLI Object
 SimpleCLI cli;
 Command ir;
@@ -12,14 +20,7 @@ Command clock;
 Command help;
 Command version;
 
-JtagWire tck = JtagWire(2, OUTPUT);
-JtagWire tms = JtagWire(3, OUTPUT);
-JtagWire tdi = JtagWire(4, OUTPUT);
-JtagWire tdo = JtagWire(5, INPUT);
-JtagWire trst = JtagWire(6, OUTPUT);
-
-JtagBus jtag_bus = JtagBus();
-Jtag arm_jtag = Jtag();
+Jtag arm_jtag = Jtag(TMS, TDI, TDO, TCK, RST);
 
 const uint8_t IR_LEN = 9;
 const uint8_t IR_FULL_LEN = 16;
@@ -52,7 +53,7 @@ void irCallback(cmd* c) {
   // Print response
   Serial.print("> TDO: ");
   for (size_t i = 0; i < IR_FULL_LEN + 7; i++) {
-    Serial.print(jtag_bus.get_array_bit(i, output));
+    Serial.print(JTAG::getBitArray(i, output));
   }
   Serial.println("");
   Serial.println("");
@@ -76,7 +77,7 @@ void drCallback(cmd* c) {
   // Print response
   Serial.print("> TDO: ");
   for (size_t i = 0; i < DR_FULL_LEN + 7; i++) {
-    Serial.print(jtag_bus.get_array_bit(i, output));
+    Serial.print(JTAG::getBitArray(i, output));
   }
   Serial.println("");
   Serial.println("");
@@ -95,11 +96,11 @@ void clockCallback(cmd* c) {
   int tms = arg_tms.getValue().toInt();
   int tdi = arg_tdi.getValue().toInt();
 
-  uint8_t tdo = jtag_bus.clock(tms, tdi);
+  // uint8_t tdo = jtag_bus.clock(tms, tdi);
 
   // Print response
   Serial.print("> TDO: ");
-  Serial.println(tdo);
+  // Serial.println(tdo);
   Serial.println("");
 }
 
@@ -141,15 +142,6 @@ void setup() {
   reset = cli.addCommand("reset", resetCallback);
   help = cli.addCommand("help", helpCallback);
   version = cli.addCommand("version", versionCallback);
-
-  jtag_bus.assign_pin(JTAG::PIN::TCK, tck);
-  jtag_bus.assign_pin(JTAG::PIN::TMS, tms);
-  jtag_bus.assign_pin(JTAG::PIN::TDI, tdi);
-  jtag_bus.assign_pin(JTAG::PIN::TDO, tdo);
-  jtag_bus.assign_pin(JTAG::PIN::TRST, trst);
-  jtag_bus.set_speed(800000);
-
-  arm_jtag.add_bus(jtag_bus);
 
   Serial.println("Welcome to the Arduino JTAG Box!");
 }
