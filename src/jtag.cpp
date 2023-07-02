@@ -347,3 +347,7 @@ void Jtag::reset() {
 JTAG::ERROR Jtag::setSpeed(uint32_t khz) {
     return this->bus.setSpeed(khz);
 }
+
+uint8_t Jtag::clock(uint8_t tms, uint8_t tdi) {
+    return this->bus.clock(tms, tdi);
+}

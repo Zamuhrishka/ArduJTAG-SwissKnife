@@ -106,6 +106,7 @@ class Jtag
         void dr(const char *data, byte* output);
         void reset();
         JTAG::ERROR setSpeed(uint32_t khz);
+        uint8_t clock(uint8_t tms, uint8_t tdi);
     private:
         JtagBus bus;
 };
