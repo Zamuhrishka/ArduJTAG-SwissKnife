@@ -38,7 +38,9 @@ namespace JTAG
     };
 
     void setBitArray(int i_bit, byte *data, int value);
+    void setBitArray(uint32_t i_bit, char *data, char value);
     int getBitArray(int i_bit, const byte *data);
+    char getBitArray(uint32_t i_bit, const char *data);
 }
 //_____ C L A S S E S __________________________________________________________
 /**
@@ -102,8 +104,10 @@ class Jtag
 
         void ir(uint32_t length, byte* command, byte* output);
         void ir(const char *command, byte* output);
+        void ir(const char *command, char* output);
         void dr(uint32_t length, byte* data, byte* output);
         void dr(const char *data, byte* output);
+        void dr(const char *data, char* output);
         void reset();
         JTAG::ERROR setSpeed(uint32_t khz);
         uint8_t clock(uint8_t tms, uint8_t tdi);
