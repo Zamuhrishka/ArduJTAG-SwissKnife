@@ -104,8 +104,10 @@ class Jtag
 
         void ir(uint32_t length, byte* command, byte* output);
         void ir(const char *command, byte* output);
+        void ir(const char *command, char* output);
         void dr(uint32_t length, byte* data, byte* output);
         void dr(const char *data, byte* output);
+        void dr(const char *data, char* output);
         void reset();
         JTAG::ERROR setSpeed(uint32_t khz);
     private:
