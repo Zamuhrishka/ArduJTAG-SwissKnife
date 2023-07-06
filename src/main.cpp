@@ -27,7 +27,7 @@ const uint8_t IR_FULL_LEN = 16;
 const uint8_t DR_LEN = 33;
 const uint8_t DR_FULL_LEN = 38;
 
-byte output[256] = {};
+char output[256] = {};
 
 void helpCallback(cmd* c) {
   Serial.println("This is Help command");
@@ -47,16 +47,11 @@ void irCallback(cmd* c) {
   // Get value
   String code = ir_code.getValue();
 
-  // arm_jtag.reset();
-  arm_jtag.ir(code.c_str(), &output[0]);
+  arm_jtag.ir(code.c_str(), output);
 
   // Print response
-  Serial.print("> TDO: ");
-  for (size_t i = 0; i < IR_FULL_LEN + 7; i++) {
-    Serial.print(JTAG::getBitArray(i, output));
-  }
-  Serial.println("");
-  Serial.println("");
+  Serial.print("> ");
+  Serial.println(output);
 
   memset(output, 0, sizeof(output));
 }
@@ -71,16 +66,11 @@ void drCallback(cmd* c) {
   // Get value
   String data = dr_data.getValue();
 
-  // arm_jtag.reset();
-  arm_jtag.dr(data.c_str(), &output[0]);
+  arm_jtag.dr(data.c_str(), output);
 
   // Print response
-  Serial.print("> TDO: ");
-  for (size_t i = 0; i < DR_FULL_LEN + 7; i++) {
-    Serial.print(JTAG::getBitArray(i, output));
-  }
-  Serial.println("");
-  Serial.println("");
+  Serial.print("> ");
+  Serial.println(output);
 
   memset(output, 0, sizeof(output));
 }
@@ -99,14 +89,13 @@ void clockCallback(cmd* c) {
   uint8_t tdo = arm_jtag.clock(tms, tdi);
 
   // Print response
-  Serial.print("> TDO: ");
+  Serial.print("> ");
   Serial.println(tdo);
-  Serial.println("");
 }
 
 void resetCallback(cmd* c) {
   arm_jtag.reset();
-  Serial.println("Done!");
+  Serial.println("> Reset");
 }
 
 // Callback in case of an error
