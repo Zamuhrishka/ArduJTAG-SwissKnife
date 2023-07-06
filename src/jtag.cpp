@@ -18,6 +18,12 @@ namespace JTAG
         }
     }
 
+    void setBitArray(uint32_t i_bit, char *data, char value)
+    {
+        assert(value == '1' || value == '0');
+        data[i_bit] = value;
+    }
+
     int getBitArray(int i_bit, const byte *data) {
         int i_byte;
         byte mask;
