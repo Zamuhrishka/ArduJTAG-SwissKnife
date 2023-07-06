@@ -33,6 +33,11 @@ namespace JTAG
 
         return ((data[i_byte] & mask) == 0) ? 0 : 1;
     }
+
+    char getBitArray(uint32_t i_bit, const char *data)
+    {
+        return data[i_bit];
+    }
 }
 
 namespace JTAG_PRIV
