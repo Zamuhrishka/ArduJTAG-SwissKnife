@@ -157,8 +157,8 @@ uint8_t JtagBus::clock(uint8_t tms, uint8_t tdi) {
     this->_tdi.setValue(tdi);
     this->_tms.setValue(tms);
 
-  Serial.print(tms);
-  Serial.print(tdi);
+//   Serial.print(tms);
+//   Serial.print(tdi);
 
     // Waiting until TCK has been stable for at least jtag_min_tck_micros.
     size_t cur_micros = micros();
@@ -178,7 +178,7 @@ uint8_t JtagBus::clock(uint8_t tms, uint8_t tdi) {
     // value changed during last jtag_clock.
     uint8_t tdo = this->_tdo.get();
 
-Serial.println(tdo);
+// Serial.println(tdo);
 
     return tdo;
 }
