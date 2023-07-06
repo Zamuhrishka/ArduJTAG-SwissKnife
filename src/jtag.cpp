@@ -278,7 +278,6 @@ void Jtag::ir(const char *command, byte* output) {
     }
 }
 
-
 void Jtag::ir(const char *command, char* output) {
     assert(command != nullptr);
     assert(output != nullptr);
@@ -292,9 +291,6 @@ void Jtag::ir(const char *command, char* output) {
     uint32_t bit_offset = 0;
     char tdo;
 
-
-    Serial.print("len = ");
-    Serial.println(len);
 
     for (i_seq = 0; i_seq < JTAG_PRIV::IR_TMS_PRE_LEN; i_seq++) {
         tdo = this->bus.clock(JTAG::getBitArray(i_seq, &tms_pre[0]), JTAG::getBitArray(i_seq, &tdi_pre[0]));
