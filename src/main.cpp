@@ -94,6 +94,11 @@ void clockCallback(cmd* c) {
 }
 
 void resetCallback(cmd* c) {
+    digitalWrite(LED_BUILTIN, HIGH);  // turn the LED on (HIGH is the voltage level)
+    delay(500);                      // wait for a second
+    digitalWrite(LED_BUILTIN, LOW);   // turn the LED off by making the voltage LOW
+    delay(500);                      // wait for a second
+
   arm_jtag.reset();
   Serial.println("> Reset");
 }
@@ -132,7 +137,7 @@ void setup() {
   help = cli.addCommand("help", helpCallback);
   version = cli.addCommand("version", versionCallback);
 
-  Serial.println("Welcome to the Arduino JTAG Box!");
+  pinMode(LED_BUILTIN, OUTPUT);
 }
 
 void loop() {
