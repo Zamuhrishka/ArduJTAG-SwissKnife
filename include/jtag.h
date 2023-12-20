@@ -9,7 +9,7 @@
 
 //_____ I N C L U D E S _______________________________________________________
 #include <Arduino.h>
-#include <CircularBuffer.h>
+// #include <CircularBuffer.h>
 //_____ C O N F I G S  ________________________________________________________
 //_____ D E F I N I T I O N S _________________________________________________
 namespace JTAG
@@ -112,11 +112,9 @@ public:
   Jtag() = delete;
   explicit Jtag(uint8_t tms, uint8_t tdi, uint8_t tdo, uint8_t tck, uint8_t trst);
 
-  void ir(uint32_t length, byte *command, byte *output);
-  void ir(const char *command, byte *output);
+  void ir1(uint16_t instruction, uint16_t length, byte *output);
   void ir(const char *command, char *output);
-  void dr(uint32_t length, byte *data, byte *output);
-  void dr(const char *data, byte *output);
+  void dr1(byte *data, uint32_t length, byte *output);
   void dr(const char *data, char *output);
   void reset();
   JTAG::ERROR setSpeed(uint32_t khz);
@@ -124,4 +122,12 @@ public:
 
 private:
   JtagBus bus;
+};
+
+class TAP
+{
+};
+
+class JTAGChain
+{
 };
