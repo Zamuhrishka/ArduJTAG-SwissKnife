@@ -1,7 +1,18 @@
+/**
+ * \file         template.h
+ * \author       Aliaksander Kavalchuk (aliaksander.kavalchuk@gmail.com)
+ * \brief        This file contains the prototypes functions which use for...
+ */
+
+//_____ I N C L U D E S _______________________________________________________
 #include "jtag.h"
 
 #include <assert.h>
 
+//_____ C O N F I G S  ________________________________________________________
+#define DEBUG_MODE
+
+//_____ D E F I N I T I O N S _________________________________________________
 namespace JTAG
 {
   void setBitArray(int i_bit, byte *data, int value)
@@ -61,6 +72,10 @@ namespace JTAG_PRIV
   const uint8_t DR_TMS_POST_LEN = 2;
 }  // namespace JTAG_PRIV
 
+//_____ C L A S S E S __________________________________________________________
+//**********************************************************************************************************************
+// JtagPin
+//**********************************************************************************************************************
 JtagPin::JtagPin(int pin, int dir)
 {
   assert(dir == INPUT || dir == OUTPUT);
@@ -127,6 +142,9 @@ int JtagPin::getDir() const
   return this->dir;
 }
 
+//**********************************************************************************************************************
+// JtagBus
+//**********************************************************************************************************************
 JtagBus::JtagBus(JtagPin tms, JtagPin tdi, JtagPin tdo, JtagPin tck, JtagPin rst):
     _tms(tms), _tdi(tdi), _tdo(tdo), _tck(tck), _rst(rst)
 {
@@ -172,11 +190,13 @@ uint8_t JtagBus::clock(uint8_t tms, uint8_t tdi)
   this->_tdi.setValue(tdi);
   this->_tms.setValue(tms);
 
+#if defined(DEBUG_MODE)
   Serial.print(tms);
   Serial.print(tdi);
+#endif
 
-  this->tms_buf[this->offset] = tms;
-  this->tdi_buf[this->offset] = tdi;
+  // this->tms_buf[this->offset] = tms;
+  // this->tdi_buf[this->offset] = tdi;
 
   // Waiting until TCK has been stable for at least jtag_min_tck_micros.
   size_t cur_micros = micros();
@@ -197,9 +217,12 @@ uint8_t JtagBus::clock(uint8_t tms, uint8_t tdi)
   // value changed during last jtag_clock.
   uint8_t tdo = this->_tdo.get();
 
+#if defined(DEBUG_MODE)
   Serial.println(tdo);
-  this->tdo_buf[this->offset] = tdo;
-  this->offset++;
+#endif
+
+  // this->tdo_buf[this->offset] = tdo;
+  // this->offset++;
 
   return tdo;
 }
@@ -224,152 +247,116 @@ JTAG::ERROR JtagBus::sequence(size_t n, const byte tms[], const byte tdi[], byte
   return JTAG::ERROR::NO;
 }
 
+//**********************************************************************************************************************
+// JTAG
+//**********************************************************************************************************************
 Jtag::Jtag(uint8_t tms, uint8_t tdi, uint8_t tdo, uint8_t tck, uint8_t rst):
     bus(JtagPin(tms, OUTPUT), JtagPin(tdi, OUTPUT), JtagPin(tdo, INPUT), JtagPin(tck, OUTPUT), JtagPin(rst, OUTPUT))
 {
 }
 
-void Jtag::ir(const char *command, char *output)
+void Jtag::ir(uint16_t instruction, uint16_t length)
 {
-  assert(command != nullptr);
-  assert(output != nullptr);
+  assert(length != 0);
 
-  uint32_t len = strlen(command);
   uint8_t tms_pre[1] = {JTAG_PRIV::IR_TMS_PRE};
   uint8_t tms_post[1] = {JTAG_PRIV::IR_TMS_POST};
   uint8_t tdi_pre[1] = {0x00};
   uint8_t tdi_post[1] = {0x00};
-  uint32_t i_seq = 0;
-  uint32_t bit_offset = 0;
-  char tdo;
 
-  for (i_seq = 0; i_seq < JTAG_PRIV::IR_TMS_PRE_LEN; i_seq++)
+  // Sending PreBitwise
+  for (uint16_t i_seq = 0; i_seq < JTAG_PRIV::IR_TMS_PRE_LEN; i_seq++)
   {
-    tdo = this->bus.clock(JTAG::getBitArray(i_seq, &tms_pre[0]), JTAG::getBitArray(i_seq, &tdi_pre[0]));
-    JTAG::setBitArray(i_seq, output, tdo + '0');
+    this->bus.clock(JTAG::getBitArray(i_seq, &tms_pre[0]), JTAG::getBitArray(i_seq, &tdi_pre[0]));
   }
 
-  bit_offset += JTAG_PRIV::IR_TMS_PRE_LEN;
-
-  for (i_seq = 0; i_seq < (len - 1); i_seq++)
+  for (uint16_t i_seq = 0; i_seq < length - 1; i_seq++)
   {
-    tdo = this->bus.clock(0, command[i_seq] == '1' ? 1 : 0);
-    JTAG::setBitArray(bit_offset + i_seq, output, tdo + '0');
+    this->bus.clock(0, JTAG::getBitArray(i_seq, (byte *)&instruction));
   }
 
-  bit_offset += i_seq;
+  this->bus.clock(1, JTAG::getBitArray(length - 1, (byte *)&instruction));
 
-  tdo = this->bus.clock(1, command[len - 1] == '1' ? 1 : 0);
-  JTAG::setBitArray(bit_offset, output, tdo + '0');
-
-  bit_offset++;
-
-  for (i_seq = 0; i_seq < JTAG_PRIV::IR_TMS_POST_LEN; i_seq++)
+  // Sending PostBitwise
+  for (uint16_t i_seq = 0; i_seq < JTAG_PRIV::IR_TMS_POST_LEN; i_seq++)
   {
-    tdo = this->bus.clock(JTAG::getBitArray(i_seq, &tms_post[0]), JTAG::getBitArray(i_seq, &tdi_post[0]));
-    JTAG::setBitArray(bit_offset + i_seq, output, tdo + '0');
+    this->bus.clock(JTAG::getBitArray(i_seq, &tms_post[0]), JTAG::getBitArray(i_seq, &tdi_post[0]));
   }
 }
 
-void Jtag::dr1(byte *data, uint32_t length, byte *output)
+void Jtag::dr(byte *data, uint32_t length, byte *output)
 {
   assert(data != nullptr);
-  // assert(output != nullptr);
   assert(length != 0);
 
   byte tms_pre[1] = {JTAG_PRIV::DR_TMS_PRE};
   byte tms_post[1] = {JTAG_PRIV::DR_TMS_POST};
   byte tdi_pre[1] = {0x00};
   byte tdi_post[1] = {0x00};
-  // int32_t i_seq = 0;
   uint16_t bit_offset = 0;
 
-  for (uint16_t i_seq = 0; i_seq < JTAG_PRIV::DR_TMS_PRE_LEN; i_seq++, bit_offset++)
+  for (uint16_t i_seq = 0; i_seq < JTAG_PRIV::DR_TMS_PRE_LEN; i_seq++ /*, bit_offset++*/)
   {
-    // bit_offset += i_seq;
-    Serial.print("[");
-    Serial.print(bit_offset);
-    Serial.println("]");
+    // #if defined(DEBUG_MODE)
+    //     Serial.print("[");
+    //     Serial.print(bit_offset);
+    //     Serial.println("]");
+    // #endif
+
     JTAG::setBitArray(bit_offset,
                       &output[0],
                       this->bus.clock(JTAG::getBitArray(i_seq, &tms_pre[0]), JTAG::getBitArray(i_seq, &tdi_pre[0])));
+    // this->bus.clock(JTAG::getBitArray(i_seq, &tms_pre[0]), JTAG::getBitArray(i_seq, &tdi_pre[0]));
   }
 
-  Serial.println("***");
+  // #if defined(DEBUG_MODE)
+  //   Serial.println("***");
+  // #endif
+
+  bit_offset++;
 
   for (uint16_t i_seq = 0; i_seq < length - 1; i_seq++, bit_offset++)
   {
-    Serial.print("(");
-    Serial.print(bit_offset);
-    Serial.println(")");
-    JTAG::setBitArray(bit_offset + i_seq, &output[0], this->bus.clock(0, JTAG::getBitArray(i_seq, data)));
+    // #if defined(DEBUG_MODE)
+    //     Serial.print("(");
+    //     Serial.print(bit_offset);
+    //     Serial.println(")");
+    // #endif
+    JTAG::setBitArray(bit_offset /* + i_seq*/, &output[0], this->bus.clock(0, JTAG::getBitArray(i_seq, data)));
   }
 
-  // bit_offset += length;
-
-  Serial.print("(");
-  Serial.print(bit_offset);
-  Serial.println(")");
+  // #if defined(DEBUG_MODE)
+  //   Serial.print("(");
+  //   Serial.print(bit_offset);
+  //   Serial.println(")");
+  // #endif
   JTAG::setBitArray(bit_offset, &output[0], this->bus.clock(1, JTAG::getBitArray(length - 1, data)));
 
-  Serial.println("***");
+  // #if defined(DEBUG_MODE)
+  //   Serial.println("***");
+  // #endif
 
   bit_offset++;
 
   for (uint16_t i_seq = 0; i_seq < JTAG_PRIV::DR_TMS_POST_LEN; i_seq++)
   {
-    Serial.print("{");
-    Serial.print(bit_offset);
-    Serial.println("}");
-    JTAG::setBitArray(bit_offset,
-                      &output[0],
-                      this->bus.clock(JTAG::getBitArray(i_seq, &tms_post[0]), JTAG::getBitArray(i_seq, &tdi_post[0])));
-    bit_offset++;
+    // #if defined(DEBUG_MODE)
+    //     Serial.print("{");
+    //     Serial.print(bit_offset);
+    //     Serial.println("}");
+    // #endif
+
+    // JTAG::setBitArray(bit_offset,
+    //                   &output[0],
+    //                   this->bus.clock(JTAG::getBitArray(i_seq, &tms_post[0]), JTAG::getBitArray(i_seq,
+    //                   &tdi_post[0])));
+    this->bus.clock(JTAG::getBitArray(i_seq, &tms_post[0]), JTAG::getBitArray(i_seq, &tdi_post[0]));
+    // bit_offset++;
   }
 
-  Serial.println("***");
-}
-
-void Jtag::dr(const char *data, char *output)
-{
-  assert(data != nullptr);
-  assert(output != nullptr);
-
-  uint32_t len = strlen(data);
-  byte tms_pre[1] = {JTAG_PRIV::DR_TMS_PRE};
-  byte tms_post[1] = {JTAG_PRIV::DR_TMS_POST};
-  byte tdi_pre[1] = {0x00};
-  byte tdi_post[1] = {0x00};
-  uint32_t i_seq = 0;
-  uint32_t bit_offset = 0;
-  char tdo;
-
-  for (i_seq = 0; i_seq < JTAG_PRIV::DR_TMS_PRE_LEN; i_seq++)
-  {
-    tdo = this->bus.clock(JTAG::getBitArray(i_seq, &tms_pre[0]), JTAG::getBitArray(i_seq, &tdi_pre[0]));
-    JTAG::setBitArray(i_seq, output, tdo + '0');
-  }
-
-  bit_offset += JTAG_PRIV::DR_TMS_PRE_LEN;
-
-  for (i_seq = 0; i_seq < (len - 1); i_seq++)
-  {
-    tdo = this->bus.clock(0, data[i_seq] == '1' ? 1 : 0);
-    JTAG::setBitArray(bit_offset + i_seq, output, tdo + '0');
-  }
-
-  bit_offset += i_seq;
-
-  tdo = this->bus.clock(1, data[len - 1] == '1' ? 1 : 0);
-  JTAG::setBitArray(bit_offset, output, tdo + '0');
-
-  bit_offset++;
-
-  for (i_seq = 0; i_seq < JTAG_PRIV::DR_TMS_POST_LEN; i_seq++)
-  {
-    tdo = this->bus.clock(JTAG::getBitArray(i_seq, &tms_post[0]), JTAG::getBitArray(i_seq, &tdi_post[0]));
-    JTAG::setBitArray(bit_offset + i_seq, output, tdo + '0');
-  }
+  // #if defined(DEBUG_MODE)
+  //   Serial.println("***");
+  // #endif
 }
 
 void Jtag::reset()
@@ -389,57 +376,4 @@ JTAG::ERROR Jtag::setSpeed(uint32_t khz)
 uint8_t Jtag::clock(uint8_t tms, uint8_t tdi)
 {
   return this->bus.clock(tms, tdi);
-}
-
-void Jtag::ir1(uint16_t instruction, uint16_t length, byte *output)
-{
-  assert(length != 0);
-
-  uint8_t tms_pre[1] = {JTAG_PRIV::IR_TMS_PRE};
-  uint8_t tms_post[1] = {JTAG_PRIV::IR_TMS_POST};
-  uint8_t tdi_pre[1] = {0x00};
-  uint8_t tdi_post[1] = {0x00};
-  uint16_t bit_offset = 0;
-
-  // Sending PreBitwise
-  for (uint16_t i_seq = 0; i_seq < JTAG_PRIV::IR_TMS_PRE_LEN; i_seq++, bit_offset++)
-  {
-    // Serial.print("[");
-    // Serial.print(bit_offset);
-    // Serial.println("]");
-    JTAG::setBitArray(bit_offset,
-                      &output[0],
-                      this->bus.clock(JTAG::getBitArray(i_seq, &tms_pre[0]), JTAG::getBitArray(i_seq, &tdi_pre[0])));
-  }
-
-  // Serial.println("***");
-
-  for (uint16_t i_seq = 0; i_seq < length - 1; i_seq++, bit_offset++)
-  {
-    // Serial.print("(");
-    // Serial.print(bit_offset);
-    // Serial.println(")");
-    JTAG::setBitArray(bit_offset, &output[0], this->bus.clock(0, JTAG::getBitArray(i_seq, (byte *)&instruction)));
-  }
-
-  // Serial.println("***");
-  // Serial.print("(");
-  // Serial.print(bit_offset);
-  // Serial.println(")");
-  JTAG::setBitArray(bit_offset, &output[0], this->bus.clock(1, JTAG::getBitArray(length - 1, (byte *)&instruction)));
-
-  // Serial.println("***");
-  bit_offset++;
-
-  // Sending PostBitwise
-  for (uint16_t i_seq = 0; i_seq < JTAG_PRIV::IR_TMS_POST_LEN; i_seq++)
-  {
-    // Serial.print("{");
-    // Serial.print(bit_offset);
-    // Serial.println("}");
-    JTAG::setBitArray(bit_offset,
-                      &output[0],
-                      this->bus.clock(JTAG::getBitArray(i_seq, &tms_post[0]), JTAG::getBitArray(i_seq, &tdi_post[0])));
-    bit_offset++;
-  }
 }

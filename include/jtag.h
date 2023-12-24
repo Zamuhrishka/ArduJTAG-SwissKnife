@@ -1,8 +1,7 @@
 /**
- * @file jtag.h
- * @author Aleksander Kovalchuk (aliaksander.kavalchuk@gmail.com)
- * @brief
- * @date 2023-05-31
+ * \file         template.h
+ * \author       Aliaksander Kavalchuk (aliaksander.kavalchuk@gmail.com)
+ * \brief        This file contains the prototypes functions which use for...
  */
 
 #pragma once
@@ -96,10 +95,10 @@ private:
   JtagPin _tck;
   JtagPin _rst;
 
-  uint8_t tms_buf[64];
-  uint8_t tdi_buf[64];
-  uint8_t tdo_buf[64];
-  uint32_t offset = 0;
+  // uint8_t tms_buf[64];
+  // uint8_t tdi_buf[64];
+  // uint8_t tdo_buf[64];
+  // uint32_t offset = 0;
 };
 
 /**
@@ -112,13 +111,31 @@ public:
   Jtag() = delete;
   explicit Jtag(uint8_t tms, uint8_t tdi, uint8_t tdo, uint8_t tck, uint8_t trst);
 
-  void ir1(uint16_t instruction, uint16_t length, byte *output);
-  void ir(const char *command, char *output);
-  void dr1(byte *data, uint32_t length, byte *output);
-  void dr(const char *data, char *output);
+  /**
+   * \brief
+   *
+   * \param[] instruction
+   * \param[] length
+   */
+  void ir(uint16_t instruction, uint16_t length);
+
+  /**
+   * \brief
+   *
+   * \param[] data
+   * \param[] length
+   * \param[] output
+   */
+  void dr(byte *data, uint32_t length, byte *output);
+  // void bitwise();
+  uint8_t clock(uint8_t tms, uint8_t tdi);
+
+  /**
+   * \brief
+   *
+   */
   void reset();
   JTAG::ERROR setSpeed(uint32_t khz);
-  uint8_t clock(uint8_t tms, uint8_t tdi);
 
 private:
   JtagBus bus;
