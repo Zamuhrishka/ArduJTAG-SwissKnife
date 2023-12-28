@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <SimpleCLI.h>
 
-#include "jtag.h"
+#include "Jtag.hpp"
 
 #define MAX_DATA_LENGTH 128  // Максимальная длина входных данных в байтах
 
@@ -27,37 +27,8 @@ const uint8_t IR_FULL_LEN = 16;
 const uint8_t DR_LEN = 33;
 const uint8_t DR_FULL_LEN = 38;
 
-// char output[256] = {};
 byte output[500] = {};
-
 byte dataBuffer[MAX_DATA_LENGTH];  // Статический массив для данных
-
-static void jtag_idcode3()
-{
-  Serial.println("Read of `IDCODE` `DP`register");
-  arm_jtag.reset();
-  memset(output, '\0', sizeof(output));
-
-  // byte instruction[] = {0xFF, 0x00};
-  uint16_t instruction = 0x1FE;
-  byte data11[] = {0x00, 0x00, 0x00, 0x00};
-  byte output1[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-  uint32_t id = 0;
-
-  uint32_t d = 0x0000FF;
-
-  arm_jtag.ir(instruction, 9);
-  memset(output1, '\0', sizeof(output1));
-
-  Serial.println("------------------------------------------------------------------------------------------");
-  arm_jtag.dr(data11, 33, /*output1*/ (byte *)&id);
-  // arm_jtag.dr((byte *)&d, 24, output1);
-  Serial.println("------------------------------------------------------------------------------------------");
-  Serial.print("> ");
-  Serial.println(id, HEX);  // Новая строка в конце
-
-  delay(300);
-}
 
 static byte hexCharToVal(char c)
 {
@@ -79,14 +50,7 @@ static byte *hexStringToBytes(String hex, byte *bytes)
     bytes[i / 2] = (hexCharToVal(hex.charAt(i)) << 4) + hexCharToVal(hex.charAt(i + 1));
   }
 
-  // hex.trim();  // Убедитесь, что нет лишних пробелов
-  // int len = hex.length();
-  // byte *bytes = new byte[len / 2];  // 2 символа на байт
-  // for (int i = 0; i < len; i += 2)
-  // {
-  //   bytes[i / 2] = (hexCharToVal(hex.charAt(i)) << 4) + hexCharToVal(hex.charAt(i + 1));
-  // }
-  // return bytes;
+  return bytes;
 }
 
 static void blink(void)
@@ -118,7 +82,7 @@ void irCmdCallback(cmd *c)
 
   // Get value
   String codeStr = code_arg.getValue();
-  String lenStr = code_arg.getValue();
+  String lenStr = len_arg.getValue();
 
   uint16_t instruction = strtol(codeStr.c_str(), NULL, 16);
   uint16_t length = lenStr.toInt();
@@ -126,16 +90,7 @@ void irCmdCallback(cmd *c)
   arm_jtag.ir(instruction, length);
 
   Serial.print("> ");
-  Serial.println(instruction);
-  Serial.println(length);
   Serial.println("IR written");
-
-  // String codeStr = c->getValueArg("code").getValue();
-  // arm_jtag.ir(ir_code.toInt(), 9);
-
-  // Print response
-  // Serial.print("> ");
-  // Serial.println(output);
 
   memset(output, 0, sizeof(output));
 }
@@ -152,35 +107,19 @@ void drCmdCallback(cmd *c)
 
   arm_jtag.dr(data, length, output);
 
-  // Освобождение памяти для data
-
   Serial.print("> ");
   Serial.println("DR written");
 
+  for (size_t i = 0; i < length / 8; i++)
+  {
+    Serial.print(output[i], HEX);
+    Serial.print(" ");
+  }
+
+  Serial.println(" ");
+
   memset(output, 0, sizeof(output));
   memset(dataBuffer, 0, sizeof(dataBuffer));
-
-  // uint32_t id = 0;
-
-  // Command cmd(c);  // Create wrapper object
-
-  // // Get arguments
-  // Argument dr_data = cmd.getArgument("data");
-
-  // // Get value
-  // String data = dr_data.getValue();
-
-  // int d = data.toInt();
-  // byte *pD = (byte *)&d;
-
-  // arm_jtag.dr(pD, 33, (byte *)&id);
-  // // arm_jtag.dr(data.c_str(), output);
-
-  // // Print response
-  // Serial.print("> ");
-  // Serial.println(id);
-
-  // memset(output, 0, sizeof(output));
 }
 
 void clockCallback(cmd *c)
@@ -228,7 +167,7 @@ void errorCallback(cmd_error *e)
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   cli.setOnError(errorCallback);  // Set error Callback
 
@@ -279,7 +218,5 @@ void loop()
     }
   }
 
-  delay(500);
-
-  // jtag_idcode3();
+  // delay(500);
 }
