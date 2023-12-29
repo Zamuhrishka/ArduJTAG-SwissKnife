@@ -1,5 +1,5 @@
 /**
- * \file         template.h
+ * \file         JtagBus.hpp
  * \author       Aliaksander Kavalchuk (aliaksander.kavalchuk@gmail.com)
  * \brief        This file contains the prototypes functions which use for...
  */
@@ -26,7 +26,7 @@ public:
   uint32_t getSpeed() const;
   void reset();
   uint8_t clock(uint8_t tms, uint8_t tdi);
-  JTAG::ERROR sequence(size_t n, const byte tms[], const byte tdi[], byte *tdo);
+  JTAG::ERROR sequence(size_t n, const uint8_t tms[], const uint8_t tdi[], uint8_t *tdo);
 
 private:
   uint32_t last_tck_micros = 0;

@@ -1,5 +1,5 @@
 /**
- * \file         template.h
+ * \file         Jtag.hpp
  * \author       Aliaksander Kavalchuk (aliaksander.kavalchuk@gmail.com)
  * \brief        This file contains the prototypes functions which use for...
  */
@@ -38,8 +38,10 @@ public:
    * \param[] length
    * \param[] output
    */
-  void dr(byte *data, uint32_t length, byte *output);
-  // void bitwise();
+  void dr(uint8_t *data, uint32_t length, uint8_t *output);
+
+  JTAG::ERROR sequence(size_t n, const uint8_t tms[], const uint8_t tdi[], uint8_t *tdo);
+
   uint8_t clock(uint8_t tms, uint8_t tdi);
 
   /**

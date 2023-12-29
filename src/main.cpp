@@ -1,9 +1,13 @@
+//_____ I N C L U D E S _______________________________________________________
 #include <Arduino.h>
 #include <SimpleCLI.h>
+#include <TimerOne.h>
 
 #include "Jtag.hpp"
+#include "version.hpp"
 
-#define MAX_DATA_LENGTH 128  // Максимальная длина входных данных в байтах
+//_____ D E F I N I T I O N S _________________________________________________
+#define MAX_DATA_LENGTH 128
 
 #define TCK 2
 #define TMS 3
@@ -11,25 +15,23 @@
 #define TDO 5
 #define RST 6
 
+//_____ V A R I A B L E S _____________________________________________________
 // Create CLI Object
 SimpleCLI cli;
 Command irCmd;
 Command drCmd;
 Command reset;
 Command clock;
+Command sequence;
 Command help;
 Command version;
 
 Jtag arm_jtag = Jtag(TMS, TDI, TDO, TCK, RST);
 
-const uint8_t IR_LEN = 9;
-const uint8_t IR_FULL_LEN = 16;
-const uint8_t DR_LEN = 33;
-const uint8_t DR_FULL_LEN = 38;
-
 byte output[500] = {};
-byte dataBuffer[MAX_DATA_LENGTH];  // Статический массив для данных
+byte dataBuffer[MAX_DATA_LENGTH];
 
+//_____ F U N C T I O N S _____________________________________________________
 static byte hexCharToVal(char c)
 {
   if ('0' <= c && c <= '9')
@@ -43,7 +45,7 @@ static byte hexCharToVal(char c)
 
 static byte *hexStringToBytes(String hex, byte *bytes)
 {
-  hex.trim();  // Убедитесь, что нет лишних пробелов
+  hex.trim();
   int len = hex.length();
   for (int i = 0; i < len && i < MAX_DATA_LENGTH * 2; i += 2)
   {
@@ -53,22 +55,39 @@ static byte *hexStringToBytes(String hex, byte *bytes)
   return bytes;
 }
 
-static void blink(void)
+//_____ C L I  C A L L B A C K S _________________________________________________
+static void heartbeat(void)
 {
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(500);
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(500);
+  // digitalWrite(LED_BUILTIN, HIGH);
+  // delay(500);
+  // digitalWrite(LED_BUILTIN, LOW);
+  // delay(500);
+  digitalWrite(LED_BUILTIN, digitalRead(LED_BUILTIN) ^ 1);
 }
 
-void helpCallback(cmd *c)
+void helpCmdCallback(cmd *c)
 {
-  Serial.println("This is Help command");
+  Serial.println("Commands:");
+  Serial.println("  reset             Reset the JTAG TAP. No options required.");
+  Serial.println("  ir [X] -len [Y]  Write to the IR register of TAP.");
+  Serial.println("                    -ir X: IR instruction in hex (e.g., 1FE).");
+  Serial.println("                    -len Y: Length of the instruction in bits.");
+  Serial.println("  dr [X] -len [Y]  Write to the DR register of TAP.");
+  Serial.println("                    -dr X: Data for DR in hex (e.g., 1A2B).");
+  Serial.println("                    -len Y: Length of the data in bits.");
+  // Serial.println("  clock -tms [X] -tdi [Y]  Write value for TMS and TDI wires.");
+  // Serial.println("                    -tms X: Bit value for TMS.");
+  // Serial.println("                    -tdi Y: Bit value for TDI.");
+  // Serial.println("  sequence -tms [X] -tdi [Y] -len [Z] Write sequence of bits.");
+  // Serial.println("                    -tms X: Bits value for TMS in hex (e.g., 1A2B).");
+  // Serial.println("                    -tdi Y: Bits value for TDI in hex (e.g., 1A2B).");
+  // Serial.println("                    -len Y: Number of the batch of bits.");
 }
 
-void versionCallback(cmd *c)
+void versionCmdCallback(cmd *c)
 {
-  Serial.println("ver.0.0.1b");
+  Serial.print(F("Firmware version: "));
+  Serial.println(FIRMWARE_VERSION);
 }
 
 // Callback function for ping command
@@ -122,7 +141,7 @@ void drCmdCallback(cmd *c)
   memset(dataBuffer, 0, sizeof(dataBuffer));
 }
 
-void clockCallback(cmd *c)
+void clockCmdCallback(cmd *c)
 {
   Command cmd(c);  // Create wrapper object
 
@@ -141,9 +160,38 @@ void clockCallback(cmd *c)
   Serial.println(tdo);
 }
 
+void sequenceCmdCallback(cmd *c)
+{
+  Command cmd(c);  // Create wrapper object
+
+  // Get arguments
+  uint32_t length = cmd.getArgument("len").getValue().toInt();
+
+  String tmsStr = cmd.getArgument("tms").getValue();
+  String tdiStr = cmd.getArgument("tdi").getValue();
+  uint8_t *tms = hexStringToBytes(tmsStr, dataBuffer);
+  uint8_t *tdi = hexStringToBytes(tdiStr, dataBuffer);
+
+  arm_jtag.sequence(length, tms, tdi, output);
+
+  // Print response
+  Serial.print("> ");
+
+  for (size_t i = 0; i < length / 8; i++)
+  {
+    Serial.print(output[i], HEX);
+    Serial.print(" ");
+  }
+
+  Serial.println(" ");
+
+  memset(output, 0, sizeof(output));
+  memset(dataBuffer, 0, sizeof(dataBuffer));
+}
+
 void resetCmdCallback(cmd *c)
 {
-  blink();
+  // blink();
 
   arm_jtag.reset();
   Serial.println("> Reset");
@@ -165,6 +213,7 @@ void errorCallback(cmd_error *e)
   }
 }
 
+//_____ A R D U I N O ____________________________________________________________
 void setup()
 {
   Serial.begin(115200);
@@ -180,15 +229,24 @@ void setup()
   drCmd.addPositionalArgument("data");
   drCmd.addPositionalArgument("len");
 
-  clock = cli.addCommand("clock", clockCallback);
+  clock = cli.addCommand("clock", clockCmdCallback);
   clock.addPositionalArgument("tms");
   clock.addPositionalArgument("tdi");
 
+  sequence = cli.addCommand("sequence", sequenceCmdCallback);
+  sequence.addPositionalArgument("tms");
+  sequence.addPositionalArgument("tdi");
+  sequence.addPositionalArgument("len");
+
   reset = cli.addCommand("reset", resetCmdCallback);
-  help = cli.addCommand("help", helpCallback);
-  version = cli.addCommand("version", versionCallback);
+
+  help = cli.addCommand("help", helpCmdCallback);
+
+  version = cli.addCommand("version", versionCmdCallback);
 
   pinMode(LED_BUILTIN, OUTPUT);
+  Timer1.initialize(1000000);
+  Timer1.attachInterrupt(heartbeat);
 }
 
 void loop()
@@ -218,5 +276,5 @@ void loop()
     }
   }
 
-  // delay(500);
+  // blink();
 }

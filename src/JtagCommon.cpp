@@ -1,5 +1,5 @@
 /**
- * \file         template.h
+ * \file         JtagCommon.cpp
  * \author       Aliaksander Kavalchuk (aliaksander.kavalchuk@gmail.com)
  * \brief        This file contains the prototypes functions which use for...
  */
@@ -8,11 +8,9 @@
 #include "JtagCommon.hpp"
 
 #include <assert.h>
-
 //_____ C O N F I G S  ________________________________________________________
 //_____ D E F I N I T I O N S _________________________________________________
 //_____ C L A S S E S _________________________________________________________
-
 namespace JTAG
 {
   void setBitArray(int i_bit, uint8_t *data, int value)
@@ -33,12 +31,6 @@ namespace JTAG
     }
   }
 
-  void setBitArray(uint32_t i_bit, char *data, char value)
-  {
-    assert(value == '1' || value == '0');
-    data[i_bit] = value;
-  }
-
   int getBitArray(int i_bit, const uint8_t *data)
   {
     int i_byte;
@@ -49,9 +41,4 @@ namespace JTAG
 
     return ((data[i_byte] & mask) == 0) ? 0 : 1;
   }
-
-  char getBitArray(uint32_t i_bit, const char *data)
-  {
-    return data[i_bit];
-  }
-}  // namespace JTAG
+}

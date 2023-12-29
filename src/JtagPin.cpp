@@ -1,5 +1,5 @@
 /**
- * \file         template.h
+ * \file         JtagPin.cpp
  * \author       Aliaksander Kavalchuk (aliaksander.kavalchuk@gmail.com)
  * \brief        This file contains the prototypes functions which use for...
  */
@@ -7,9 +7,13 @@
 //_____ I N C L U D E S _______________________________________________________
 #include "JtagPin.hpp"
 
+#include <Arduino.h>
+
 #include <assert.h>
+
+// #include <JtagCommon.hpp>
 //_____ C O N F I G S  ________________________________________________________
-#define DEBUG_MODE
+// #define DEBUG_MODE
 
 //_____ D E F I N I T I O N S _________________________________________________
 //_____ C L A S S E S _________________________________________________________
@@ -35,14 +39,14 @@ int JtagPin::get() const
   return digitalRead(this->pin);
 }
 
-void JtagPin::pulseHigh(size_t us)
+void JtagPin::pulseHigh(int us)
 {
   this->setHigh();
   delayMicroseconds(us);
   this->setLow();
 }
 
-void JtagPin::pulseLow(size_t us)
+void JtagPin::pulseLow(int us)
 {
   this->setHigh();
   delayMicroseconds(us);

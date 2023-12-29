@@ -1,5 +1,5 @@
 /**
- * \file         template.h
+ * \file         JtagCommon.hpp
  * \author       Aliaksander Kavalchuk (aliaksander.kavalchuk@gmail.com)
  * \brief        This file contains the prototypes functions which use for...
  */
@@ -43,8 +43,6 @@ namespace JTAG
   };
 
   void setBitArray(int i_bit, uint8_t *data, int value);
-  void setBitArray(uint32_t i_bit, char *data, char value);
   int getBitArray(int i_bit, const uint8_t *data);
-  char getBitArray(uint32_t i_bit, const char *data);
 }
 //_____ C L A S S E S __________________________________________________________

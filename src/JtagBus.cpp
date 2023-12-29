@@ -1,5 +1,5 @@
 /**
- * \file         template.h
+ * \file         JtagBus.cpp
  * \author       Aliaksander Kavalchuk (aliaksander.kavalchuk@gmail.com)
  * \brief        This file contains the prototypes functions which use for...
  */
@@ -7,7 +7,11 @@
 //_____ I N C L U D E S _______________________________________________________
 #include "JtagBus.hpp"
 
+#include <Arduino.h>
+
 #include <assert.h>
+
+#include "JtagCommon.hpp"
 
 //_____ C O N F I G S  ________________________________________________________
 //_____ D E F I N I T I O N S _________________________________________________
@@ -28,8 +32,7 @@ JTAG::ERROR JtagBus::setSpeed(uint32_t khz)
 
   /*
    * Mininum time for TCK to be stable is half the clock period.
-   * For 100kHz of TCK frequency the period is 10us so jtag_min_tck_micros is
-   * 5us.
+   * For 100kHz of TCK frequency the period is 10us so jtag_min_tck_micros is 5us.
    */
   this->min_tck_micros = (500U + khz - 1) / khz;  // ceil
 
@@ -62,9 +65,6 @@ uint8_t JtagBus::clock(uint8_t tms, uint8_t tdi)
   Serial.print(tdi);
 #endif
 
-  // this->tms_buf[this->offset] = tms;
-  // this->tdi_buf[this->offset] = tdi;
-
   // Waiting until TCK has been stable for at least jtag_min_tck_micros.
   size_t cur_micros = micros();
 
@@ -88,13 +88,10 @@ uint8_t JtagBus::clock(uint8_t tms, uint8_t tdi)
   Serial.println(tdo);
 #endif
 
-  // this->tdo_buf[this->offset] = tdo;
-  // this->offset++;
-
   return tdo;
 }
 
-JTAG::ERROR JtagBus::sequence(size_t n, const byte tms[], const byte tdi[], byte *tdo)
+JTAG::ERROR JtagBus::sequence(size_t n, const uint8_t tms[], const uint8_t tdi[], uint8_t *tdo)
 {
   assert(tms != nullptr);
   assert(tdi != nullptr);
