@@ -42,8 +42,6 @@ public:
 
   JTAG::ERROR sequence(size_t n, const uint8_t tms[], const uint8_t tdi[], uint8_t *tdo);
 
-  uint8_t clock(uint8_t tms, uint8_t tdi);
-
   /**
    * \brief
    *

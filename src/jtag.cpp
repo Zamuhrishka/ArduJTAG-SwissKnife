@@ -109,11 +109,6 @@ JTAG::ERROR Jtag::sequence(size_t n, const uint8_t tms[], const uint8_t tdi[], u
   return this->bus.sequence(n, tms, tdi, tdo);
 }
 
-uint8_t Jtag::clock(uint8_t tms, uint8_t tdi)
-{
-  return this->bus.clock(tms, tdi);
-}
-
 void Jtag::reset()
 {
   uint8_t tms = JTAG_PRIV::RESET_TMS;
