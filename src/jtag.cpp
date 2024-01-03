@@ -42,20 +42,22 @@ void Jtag::ir(uint16_t instruction, uint16_t length)
   uint8_t tdi_pre[1] = {0x00};
   uint8_t tdi_post[1] = {0x00};
 
-  // Sending PreBitwise
+  /* Goto `Shift-IR` state */
   for (uint16_t i_seq = 0; i_seq < IR_TMS_PRE_LEN; i_seq++)
   {
     this->bus.clock(JTAG::getBitArray(i_seq, &tms_pre[0]), JTAG::getBitArray(i_seq, &tdi_pre[0]));
   }
 
+  /* Shifting bits into IR register except last bit */
   for (uint16_t i_seq = 0; i_seq < length - 1; i_seq++)
   {
     this->bus.clock(0, JTAG::getBitArray(i_seq, (uint8_t *)&instruction));
   }
 
+  /* Shifting the last bit into IR register */
   this->bus.clock(1, JTAG::getBitArray(length - 1, (uint8_t *)&instruction));
 
-  // Sending PostBitwise
+  /* Goto `Run-Test/Idle` state */
   for (uint16_t i_seq = 0; i_seq < IR_TMS_POST_LEN; i_seq++)
   {
     this->bus.clock(JTAG::getBitArray(i_seq, &tms_post[0]), JTAG::getBitArray(i_seq, &tdi_post[0]));
@@ -73,6 +75,7 @@ void Jtag::dr(uint8_t *data, uint32_t length, uint8_t *output)
   uint8_t tdi_post[1] = {0x00};
   uint16_t bit_offset = 0;
 
+  /* Goto `Shift-DR` state */
   for (uint16_t i_seq = 0; i_seq < DR_TMS_PRE_LEN; i_seq++)
   {
     JTAG::setBitArray(bit_offset,
@@ -82,15 +85,18 @@ void Jtag::dr(uint8_t *data, uint32_t length, uint8_t *output)
 
   bit_offset++;
 
+  /* Shifting bits into DR register except last bit */
   for (uint16_t i_seq = 0; i_seq < length - 1; i_seq++, bit_offset++)
   {
     JTAG::setBitArray(bit_offset, &output[0], this->bus.clock(0, JTAG::getBitArray(i_seq, data)));
   }
 
+  /* Shifting the last bit into DR register */
   JTAG::setBitArray(bit_offset, &output[0], this->bus.clock(1, JTAG::getBitArray(length - 1, data)));
 
   bit_offset++;
 
+  /* Goto `Run-Test/Idle` state */
   for (uint16_t i_seq = 0; i_seq < DR_TMS_POST_LEN; i_seq++)
   {
     this->bus.clock(JTAG::getBitArray(i_seq, &tms_post[0]), JTAG::getBitArray(i_seq, &tdi_post[0]));
