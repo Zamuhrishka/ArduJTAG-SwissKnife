@@ -75,13 +75,12 @@ void Jtag::dr(uint8_t *data, uint32_t length, uint8_t *output)
   uint8_t tdi_pre[1] = {0x00};
   uint8_t tdi_post[1] = {0x00};
   uint16_t bit_offset = 0;
+  uint8_t tdo = 0;
 
   /* Goto `Shift-DR` state */
   for (uint16_t i_seq = 0; i_seq < DR_TMS_PRE_LEN; i_seq++)
   {
-    JTAG::setBitArray(bit_offset,
-                      &output[0],
-                      this->bus.clock(JTAG::getBitArray(i_seq, &tms_pre[0]), JTAG::getBitArray(i_seq, &tdi_pre[0])));
+    this->bus.clock(JTAG::getBitArray(i_seq, &tms_pre[0]), JTAG::getBitArray(i_seq, &tdi_pre[0]));
   }
 
   bit_offset++;
@@ -89,11 +88,20 @@ void Jtag::dr(uint8_t *data, uint32_t length, uint8_t *output)
   /* Shifting bits into DR register except last bit */
   for (uint16_t i_seq = 0; i_seq < length - 1; i_seq++, bit_offset++)
   {
-    JTAG::setBitArray(bit_offset, &output[0], this->bus.clock(0, JTAG::getBitArray(i_seq, data)));
+    tdo = this->bus.clock(0, JTAG::getBitArray(i_seq, data));
+
+    if (output != nullptr)
+    {
+      JTAG::setBitArray(bit_offset, &output[0], tdo);
+    }
   }
 
   /* Shifting the last bit into DR register */
-  JTAG::setBitArray(bit_offset, &output[0], this->bus.clock(1, JTAG::getBitArray(length - 1, data)));
+  tdo = this->bus.clock(1, JTAG::getBitArray(length - 1, data));
+  if (output != nullptr)
+  {
+    JTAG::setBitArray(bit_offset, &output[0], tdo);
+  }
 
   bit_offset++;
 
