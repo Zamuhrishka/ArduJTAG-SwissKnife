@@ -1,7 +1,8 @@
 /**
- * \file         Jtag.cpp
+ * \file         Jtag.hpp
  * \author       Aliaksander Kavalchuk (aliaksander.kavalchuk@gmail.com)
- * \brief        This file contains the prototypes functions which use for...
+ * \brief        This file contains the class definition for the JTAG interface used to communicate with devices
+ *               supporting the JTAG protocol.
  */
 
 //_____ I N C L U D E S _______________________________________________________

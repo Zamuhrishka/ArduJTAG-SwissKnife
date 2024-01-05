@@ -1,7 +1,8 @@
 /**
  * \file         JtagCommon.cpp
  * \author       Aliaksander Kavalchuk (aliaksander.kavalchuk@gmail.com)
- * \brief        This file contains the prototypes functions which use for...
+ * \brief        This file contains common definitions, constants, and utility functions used across the JTAG interface
+ *               implementation.
  */
 
 //_____ I N C L U D E S _______________________________________________________

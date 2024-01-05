@@ -1,7 +1,8 @@
 /**
  * \file         JtagPin.cpp
  * \author       Aliaksander Kavalchuk (aliaksander.kavalchuk@gmail.com)
- * \brief        This file contains the prototypes functions which use for...
+ * \brief        This file contains the prototypes for the JtagPin class which is used for managing individual pins in
+ *               JTAG interface.
  */
 
 //_____ I N C L U D E S _______________________________________________________
@@ -10,11 +11,7 @@
 #include <Arduino.h>
 
 #include <assert.h>
-
-// #include <JtagCommon.hpp>
 //_____ C O N F I G S  ________________________________________________________
-// #define DEBUG_MODE
-
 //_____ D E F I N I T I O N S _________________________________________________
 //_____ C L A S S E S _________________________________________________________
 JtagPin::JtagPin(int pin, int dir)

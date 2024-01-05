@@ -1,7 +1,8 @@
 /**
  * \file         JtagBus.cpp
  * \author       Aliaksander Kavalchuk (aliaksander.kavalchuk@gmail.com)
- * \brief        This file contains the prototypes functions which use for...
+ * \brief        This file contains the prototypes and definition for the JtagBus class which manages the JTAG
+ *               communication bus.
  */
 
 //_____ I N C L U D E S _______________________________________________________
@@ -14,6 +15,7 @@
 #include "JtagCommon.hpp"
 
 //_____ C O N F I G S  ________________________________________________________
+// #define DEBUG_MODE
 //_____ D E F I N I T I O N S _________________________________________________
 //_____ C L A S S E S _________________________________________________________
 JtagBus::JtagBus(JtagPin tms, JtagPin tdi, JtagPin tdo, JtagPin tck, JtagPin rst):
