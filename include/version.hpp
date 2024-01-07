@@ -1,5 +1,0 @@
-#define FW_VER "DEV"
-#define COMMIT_NUMBER "ca8b478"
-#define COMMIT_DATE "24_01_05"
-#define COMMIT_BRANCH "feature/jtag-class-rework"
-#define FIRMWARE_VERSION "DEV-ca8b478-24_01_05"
