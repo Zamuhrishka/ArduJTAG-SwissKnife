@@ -21,16 +21,14 @@ SimpleCLI cli;
 Command irCmd;
 Command drCmd;
 Command reset;
-// Command clock;
 Command sequence;
 Command help;
 Command version;
 
-Jtag arm_jtag = Jtag(TMS, TDI, TDO, TCK, RST);
+Jtag jtag = Jtag(TMS, TDI, TDO, TCK, RST);
 
 byte output[500] = {};
 byte dataBuffer[MAX_DATA_LENGTH];
-
 //_____ F U N C T I O N S _____________________________________________________
 static byte hexCharToVal(char c)
 {
@@ -55,149 +53,9 @@ static byte *hexStringToBytes(String hex, byte *bytes)
   return bytes;
 }
 
-static uint8_t swap_nibbles(uint8_t x)
-{
-  return (x << 4) | (x >> 4);
-}
-
-static void jtag_test_1(void)
-{
-  uint16_t instruction = 0x1FE;
-  uint16_t length = 9;
-  uint32_t data = 0;
-  uint32_t id = 0;
-
-  arm_jtag.reset();
-  arm_jtag.ir(instruction = 0x1FE, length = 9);
-  arm_jtag.dr((byte *)&data, length = 32, (uint8_t *)&id);
-
-  Serial.print("> ");
-  Serial.println(id, HEX);
-}
-
-static void jtag_test_2(void)
-{
-  uint8_t tms[] = {0x06, 0x60, 0x01, 0x00, 0x00, 0x00, 0x0C};
-  uint8_t tdi[] = {0xC0, 0x3F, 0x00, 0x00, 0x00, 0x00, 0x00};
-  size_t length = 54;
-
-  arm_jtag.reset();
-  arm_jtag.sequence(length = 54, tms, tdi, output);
-
-  Serial.print("> ");
-
-  for (size_t i = 0; i < length / 8; i++)
-  {
-    // uint8_t bb = swap_nibbles(output[i]);
-    Serial.print(output[i], HEX);
-    Serial.print(" ");
-  }
-  Serial.println(" ");
-}
-
-static void jtag_test_3(void)
-{
-  uint16_t instruction = 0x1FA;
-  uint16_t length = 9;
-  uint8_t data[] = {0x04, 0x00, 0x00, 0x00, 0x00};
-  uint8_t data_1[] = {0x10, 0x00, 0x00, 0x00, 0x00};
-  uint8_t data_2[] = {0x02, 0x00, 0x00, 0x00, 0x01};
-  uint8_t data_3[] = {0x2E, 0x55, 0x55, 0x55, 0x55};
-  uint8_t data_4[] = {0x07, 0x00, 0x00, 0x00, 0x00};
-  uint8_t zeros[] = {0x00, 0x00, 0x00, 0x00, 0x00};
-  uint8_t enable[] = {0x02, 0x00, 0x00, 0x80, 0x02};
-  uint8_t enable_rd[] = {0x03, 0x00, 0x00, 0x80, 0x02};
-  uint32_t id = 0;
-
-  // ENABLE
-  Serial.println("E============================E");
-  arm_jtag.reset();
-  arm_jtag.ir(instruction = 0x1FA, length = 9);
-  arm_jtag.dr(enable, length = 36, output);
-
-  Serial.println("----------------------------");
-
-  arm_jtag.reset();
-  arm_jtag.ir(instruction = 0x1FA, length = 9);
-  arm_jtag.dr(enable_rd, length = 36, output);
-
-  Serial.println("----------------------------");
-
-  // arm_jtag.reset();
-  // arm_jtag.dr(zeros, length = 36, output);
-
-  // WRITE
-  Serial.println("W============================W");
-  arm_jtag.reset();
-  arm_jtag.ir(instruction = 0x1FA, length = 9);
-  arm_jtag.dr(data, length = 36, output);
-
-  Serial.println("----------------------------");
-
-  arm_jtag.reset();
-  arm_jtag.ir(instruction = 0x1FB, length = 9);
-  arm_jtag.dr(data_1, length = 36, output);
-
-  Serial.println("----------------------------");
-
-  arm_jtag.reset();
-  arm_jtag.ir(instruction = 0x1FB, length = 9);
-  arm_jtag.dr(data_2, length = 36, output);
-
-  Serial.println("----------------------------");
-
-  arm_jtag.reset();
-  arm_jtag.ir(instruction = 0x1FB, length = 9);
-  arm_jtag.dr(data_3, length = 36, output);
-
-  Serial.println("----------------------------");
-
-  // READ
-  Serial.println("R============================R");
-  arm_jtag.reset();
-  arm_jtag.ir(instruction = 0x1FA, length = 9);
-  arm_jtag.dr(data, length = 36, output);
-
-  Serial.println("----------------------------");
-
-  arm_jtag.reset();
-  arm_jtag.ir(instruction = 0x1FB, length = 9);
-  arm_jtag.dr(data_1, length = 36, output);
-
-  Serial.println("----------------------------");
-
-  arm_jtag.reset();
-  arm_jtag.ir(instruction = 0x1FB, length = 9);
-  arm_jtag.dr(data_2, length = 36, output);
-
-  Serial.println("----------------------------");
-
-  arm_jtag.reset();
-  arm_jtag.ir(instruction = 0x1FB, length = 9);
-  arm_jtag.dr(data_4, length = 36, output);
-
-  arm_jtag.dr(zeros, length = 36, output);
-
-  Serial.println("----------------------------");
-
-  Serial.print("> ");
-
-  for (size_t i = 0; i < 36 / 8; i++)
-  {
-    Serial.print(output[i], HEX);
-    Serial.print(" ");
-  }
-
-  Serial.println(" ");
-}
-
 //_____ C L I  C A L L B A C K S _________________________________________________
 static void heartbeat(void)
 {
-  // digitalWrite(LED_BUILTIN, HIGH);
-  // delay(500);
-  // digitalWrite(LED_BUILTIN, LOW);
-  // delay(500);
   digitalWrite(LED_BUILTIN, digitalRead(LED_BUILTIN) ^ 1);
 }
 
@@ -242,7 +100,7 @@ void irCmdCallback(cmd *c)
   uint16_t instruction = strtol(codeStr.c_str(), NULL, 16);
   uint16_t length = lenStr.toInt();
 
-  arm_jtag.ir(instruction, length);
+  jtag.ir(instruction, length);
 
   Serial.print("> ");
   Serial.println("IR written");
@@ -255,12 +113,17 @@ void drCmdCallback(cmd *c)
 {
   Command cmd(c);  // Create wrapper object
 
-  String dataStr = cmd.getArgument("data").getValue();
+  // Get arguments
+  Argument data_arg = cmd.getArgument("data");
+  Argument len_arg = cmd.getArgument("len");
 
-  uint32_t length = cmd.getArgument("len").getValue().toInt();
+  String dataStr = data_arg.getValue();
+  String lenStr = len_arg.getValue();
+
+  uint32_t length = lenStr.toInt();
   byte *data = hexStringToBytes(dataStr, dataBuffer);
 
-  arm_jtag.dr(data, length, output);
+  jtag.dr(data, length, output);
 
   Serial.print("> ");
   Serial.println("DR written");
@@ -276,25 +139,6 @@ void drCmdCallback(cmd *c)
   memset(output, 0, sizeof(output));
   memset(dataBuffer, 0, sizeof(dataBuffer));
 }
-
-// void clockCmdCallback(cmd *c)
-// {
-//   Command cmd(c);  // Create wrapper object
-
-//   // Get arguments
-//   Argument arg_tms = cmd.getArgument("tms");
-//   Argument arg_tdi = cmd.getArgument("tdi");
-
-//   // Get value
-//   int tms = arg_tms.getValue().toInt();
-//   int tdi = arg_tdi.getValue().toInt();
-
-//   uint8_t tdo = arm_jtag.clock(tms, tdi);
-
-//   // Print response
-//   Serial.print("> ");
-//   Serial.println(tdo);
-// }
 
 void sequenceCmdCallback(cmd *c)
 {
@@ -337,7 +181,7 @@ void resetCmdCallback(cmd *c)
 {
   // blink();
 
-  arm_jtag.reset();
+  jtag.reset();
   Serial.println("> Reset");
 }
 
@@ -372,10 +216,6 @@ void setup()
   drCmd = cli.addCommand("dr", drCmdCallback);
   drCmd.addPositionalArgument("data");
   drCmd.addPositionalArgument("len");
-
-  // clock = cli.addCommand("clock", clockCmdCallback);
-  // clock.addPositionalArgument("tms");
-  // clock.addPositionalArgument("tdi");
 
   sequence = cli.addCommand("sequence", sequenceCmdCallback);
   sequence.addPositionalArgument("tms");
@@ -419,8 +259,4 @@ void loop()
       Serial.println("\"?");
     }
   }
-
-  // jtag_test_2();
-  jtag_test_3();
-  delay(1000);
 }
