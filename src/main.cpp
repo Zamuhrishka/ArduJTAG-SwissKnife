@@ -7,7 +7,7 @@
 #include "version.hpp"
 
 //_____ D E F I N I T I O N S _________________________________________________
-#define MAX_DATA_LENGTH 128
+#define MAX_DATA_LENGTH 64
 
 #define TCK 2
 #define TMS 3
@@ -27,8 +27,9 @@ Command version;
 
 Jtag jtag = Jtag(TMS, TDI, TDO, TCK, RST);
 
-byte output[500] = {};
+byte output[MAX_DATA_LENGTH];
 byte dataBuffer[MAX_DATA_LENGTH];
+byte dataBuffer2[MAX_DATA_LENGTH];
 //_____ F U N C T I O N S _____________________________________________________
 static byte hexCharToVal(char c)
 {
@@ -64,10 +65,10 @@ void helpCmdCallback(cmd *c)
   Serial.println("Commands:");
   Serial.println("  reset             Reset the JTAG TAP. No options required.");
   Serial.println("  ir [X] -len [Y]  Write to the IR register of TAP.");
-  Serial.println("                    -ir X: IR instruction in hex (e.g., 1FE).");
+  Serial.println("                    -code X: IR instruction in hex (e.g., 1FE).");
   Serial.println("                    -len Y: Length of the instruction in bits.");
   Serial.println("  dr [X] -len [Y]  Write to the DR register of TAP.");
-  Serial.println("                    -dr X: Data for DR in hex (e.g., 1A2B).");
+  Serial.println("                    -data X: Data for DR in hex (e.g., 1A2B).");
   Serial.println("                    -len Y: Length of the data in bits.");
   // Serial.println("  clock -tms [X] -tdi [Y]  Write value for TMS and TDI wires.");
   // Serial.println("                    -tms X: Bit value for TMS.");
@@ -128,7 +129,9 @@ void drCmdCallback(cmd *c)
   Serial.print("> ");
   Serial.println("DR written");
 
-  for (size_t i = 0; i < length / 8; i++)
+  uint16_t bytes_num = (length / 8) + 1;
+
+  for (size_t i = 0; i < bytes_num; i++)
   {
     Serial.print(output[i], HEX);
     Serial.print(" ");
@@ -150,37 +153,34 @@ void sequenceCmdCallback(cmd *c)
   String tmsStr = cmd.getArgument("tms").getValue();
   String tdiStr = cmd.getArgument("tdi").getValue();
   uint8_t *tms = hexStringToBytes(tmsStr, dataBuffer);
-  uint8_t *tdi = hexStringToBytes(tdiStr, dataBuffer);
+  uint8_t *tdi = hexStringToBytes(tdiStr, dataBuffer2);
 
-  for (size_t i = 0; i < length / 8; i++)
+  Serial.print("> ");
+
+  JTAG::ERROR error = jtag.sequence(length, tms, tdi, output);
+  if (error != JTAG::ERROR::NO)
   {
-    Serial.print(tms[i], HEX);
-    Serial.print(" ");
+    Serial.println("Operation fault!");
+  }
+  else
+  {
+    uint16_t bytes_num = (length / 8) + 1;
+    for (size_t i = 0; i < bytes_num; i++)
+    {
+      Serial.print(output[i], HEX);
+      Serial.print(" ");
+    }
+
+    Serial.println(" ");
   }
 
-  Serial.println(" ");
-
-  // arm_jtag.sequence(length, tms, tdi, output);
-
-  // // Print response
-  // Serial.print("> ");
-
-  // for (size_t i = 0; i < length / 8; i++)
-  // {
-  //   Serial.print(output[i], HEX);
-  //   Serial.print(" ");
-  // }
-
-  // Serial.println(" ");
-
-  // memset(output, 0, sizeof(output));
-  // memset(dataBuffer, 0, sizeof(dataBuffer));
+  memset(output, 0, sizeof(output));
+  memset(dataBuffer, 0, sizeof(dataBuffer));
+  memset(dataBuffer2, 0, sizeof(dataBuffer2));
 }
 
 void resetCmdCallback(cmd *c)
 {
-  // blink();
-
   jtag.reset();
   Serial.println("> Reset");
 }
