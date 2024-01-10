@@ -6,7 +6,7 @@ This is an attempt to make an Arduino-based JTAG research tool.
 
 > WARNING: The project is still under development.
 
-![Warning](assets\pics\under_construction.png)
+![Warning](assets/pics/under_construction.png)
 
 ## Pinout
 
